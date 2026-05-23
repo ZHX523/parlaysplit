@@ -30,7 +30,6 @@ class Migration(migrations.Migration):
             name="host_code",
             field=models.CharField(
                 blank=True,
-                db_index=True,
                 help_text="5-digit code for the host to find and manage this parlay.",
                 max_length=5,
                 null=True,
