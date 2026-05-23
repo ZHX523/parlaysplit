@@ -7,8 +7,8 @@
   {% include "meta/meta.html" %}
   <meta name="theme-color" content="#0f172a">
   <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
-  <link rel="stylesheet" href="{% static 'css/output.css' %}">
-  <script src="{% static 'js/parlay-form.js' %}?v=2"></script>
+  <link rel="stylesheet" href="{% static 'css/output.css' %}?v=8">
+  <script src="{% static 'js/parlay-form.js' %}?v=5"></script>
   <script defer src="https://unpkg.com/alpinejs@3.14.3/dist/cdn.min.js"></script>
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
   {% if plausible_domain %}
@@ -22,7 +22,15 @@
       <a href="{% url 'parlays:landing' %}" class="font-bold text-lg tracking-tight text-emerald-400">
         ParlaySplit
       </a>
-      <a href="{% url 'parlays:create' %}" class="btn-primary text-sm py-2 px-4">+ Parlay</a>
+      <div class="btn-nav-group">
+        <a href="{% url 'parlays:host_lookup' %}" class="btn-check-parlay btn-nav" aria-label="Find parlay">
+          {% include "parlays/partials/btn_label_lookup_parlay.html" %}
+        </a>
+        <a href="{% url 'parlays:create' %}" class="btn-primary btn-nav" aria-label="Create parlay">
+          <span class="btn-nav-plus" aria-hidden="true">+</span>
+          <span>Parlay</span>
+        </a>
+      </div>
     </div>
   </header>
 

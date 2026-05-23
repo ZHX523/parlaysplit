@@ -1,6 +1,4 @@
-"""
-OCR pipeline optimized for FanDuel and DraftKings bet slip screenshots.
-"""
+"""OCR pipeline for bet slip screenshots."""
 import logging
 import re
 from decimal import Decimal, InvalidOperation
@@ -11,7 +9,7 @@ import numpy as np
 import pytesseract
 from PIL import Image, ImageEnhance, ImageFilter
 
-from parlays.models import LegType, Parlay, ParlayLeg, Sportsbook
+from parlays.models import LegType, Parlay, ParlayLeg
 from parlays.services.odds import american_odds_to_payout
 
 logger = logging.getLogger(__name__)
@@ -30,15 +28,6 @@ WAGER_KEYWORDS = re.compile(
     r"(wager|bet amount|total wager|stake|risk)",
     re.IGNORECASE,
 )
-SPORTSBOOK_HINTS = {
-    Sportsbook.FANDUEL: re.compile(r"fanduel", re.IGNORECASE),
-    Sportsbook.DRAFTKINGS: re.compile(r"draftkings|draft kings", re.IGNORECASE),
-    Sportsbook.KALSHI: re.compile(r"kalshi", re.IGNORECASE),
-    Sportsbook.BETMGM: re.compile(r"betmgm|mgm", re.IGNORECASE),
-    Sportsbook.CAESARS: re.compile(r"caesars", re.IGNORECASE),
-}
-
-
 def preprocess_image(image_bytes: bytes) -> np.ndarray:
     """Grayscale, sharpen, threshold for OCR."""
     pil = Image.open(BytesIO(image_bytes))
@@ -90,13 +79,6 @@ def _extract_all_money(text: str) -> list[Decimal]:
         if amount and amount >= Decimal("0.01"):
             amounts.append(amount)
     return amounts
-
-
-def _detect_sportsbook(text: str) -> str:
-    for book, pattern in SPORTSBOOK_HINTS.items():
-        if pattern.search(text):
-            return book
-    return Sportsbook.OTHER
 
 
 def _extract_odds(text: str) -> int | None:
@@ -154,7 +136,6 @@ def parse_ocr_text(text: str) -> dict:
     lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
     joined = "\n".join(lines)
 
-    sportsbook = _detect_sportsbook(joined)
     odds_american = _extract_odds(joined)
 
     wager = _find_money_near_keyword(lines, WAGER_KEYWORDS)
@@ -169,7 +150,6 @@ def parse_ocr_text(text: str) -> dict:
     legs = _extract_legs(lines, joined)
 
     return {
-        "sportsbook": sportsbook,
         "odds_american": odds_american,
         "wager_amount": str(wager) if wager else "",
         "potential_payout": str(payout) if payout else "",
@@ -201,8 +181,6 @@ class OCRService:
 def apply_parsed_to_parlay(parlay: Parlay, parsed: dict, creator_nickname: str = ""):
     if creator_nickname:
         parlay.creator_nickname = creator_nickname
-    if parsed.get("sportsbook"):
-        parlay.sportsbook = parsed["sportsbook"]
     if parsed.get("odds_american"):
         parlay.odds_american = parsed["odds_american"]
     if parsed.get("wager_amount"):
@@ -229,7 +207,7 @@ def apply_parsed_to_parlay(parlay: Parlay, parsed: dict, creator_nickname: str =
             if line:
                 ParlayLeg.objects.create(
                     parlay=parlay,
-                    leg_type=LegType.OTHER,
+                    leg_type=LegType.MONEYLINE,
                     description=line[:500],
                     sort_order=i,
                 )

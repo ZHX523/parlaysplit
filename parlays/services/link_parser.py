@@ -1,10 +1,8 @@
 """
-Detect and validate FanDuel / DraftKings shared bet slip URLs.
+Detect and validate shared bet slip URLs (FanDuel / DraftKings hosts).
 """
 import re
 from urllib.parse import urlparse
-
-from parlays.models import Sportsbook
 
 FANDUEL_HOSTS = (
     "fanduel.com",
@@ -23,34 +21,21 @@ SHARE_PATH_HINTS = re.compile(
 )
 
 
-def detect_sportsbook_from_url(url: str) -> str | None:
+def is_supported_bet_link(url: str) -> bool:
     parsed = urlparse(url.strip())
     if parsed.scheme not in ("http", "https"):
-        return None
+        return False
     host = (parsed.netloc or "").lower().removeprefix("www.")
     if any(host == h or host.endswith("." + h) for h in FANDUEL_HOSTS):
-        return Sportsbook.FANDUEL
+        return True
     if any(host == h or host.endswith("." + h) for h in DRAFTKINGS_HOSTS):
-        return Sportsbook.DRAFTKINGS
-    return None
-
-
-def is_supported_bet_link(url: str) -> bool:
-    return detect_sportsbook_from_url(url) is not None
+        return True
+    return False
 
 
 def parse_bet_slip_link(url: str) -> dict:
-    """
-    Extract coordination fields from a shared bet URL.
-    Share links are often opaque; sportsbook + link are reliable.
-    """
+    """Extract coordination fields from a shared bet URL."""
     url = url.strip()
-    sportsbook = detect_sportsbook_from_url(url)
-    if not sportsbook:
+    if not is_supported_bet_link(url):
         return {}
-
-    parsed = urlparse(url)
-    return {
-        "sportsbook": sportsbook,
-        "external_link": url,
-    }
+    return {"external_link": url}

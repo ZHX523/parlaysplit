@@ -32,7 +32,15 @@ from .forms import (
 
 )
 
-from .models import LegType, OCRUpload, OCRUploadStatus, Parlay, ParlayStatus, Sportsbook
+from .models import (
+    LegType,
+    OCRUpload,
+    OCRUploadStatus,
+    Parlay,
+    ParlayStatus,
+    Participant,
+    ParticipantStatus,
+)
 
 from .services.link_parser import parse_bet_slip_link
 
@@ -51,7 +59,10 @@ SUBMISSION_SCREENSHOT = "screenshot"
 SUBMISSION_LINK = "link"
 
 
-
+def _redirect_after_parlay_create(request, parlay):
+    request.session[f"creator_{parlay.id}"] = True
+    request.session[f"show_share_intro_{parlay.id}"] = True
+    return redirect("parlays:detail", pk=parlay.id)
 
 
 def landing(request):
@@ -95,8 +106,6 @@ def _review_initial_from_ocr(ocr_upload: OCRUpload) -> tuple[dict, list[dict]]:
     wager = parsed.get("wager_amount") or ""
 
     initial = {
-
-        "sportsbook": parsed.get("sportsbook", "") or Sportsbook.FANDUEL,
 
         "odds_american": parsed.get("odds_american") or None,
 
@@ -236,11 +245,7 @@ def create_parlay(request):
 
                 request.session["pending_external_link"] = parsed.get("external_link", "")
 
-                request.session["pending_link_initial"] = {
-
-                    "sportsbook": parsed.get("sportsbook", ""),
-
-                }
+                request.session["pending_link_initial"] = {}
 
                 from django.urls import reverse
 
@@ -270,9 +275,7 @@ def create_parlay(request):
 
                     manual_form.save_legs(parlay)
 
-                    request.session[f"creator_{parlay.id}"] = True
-
-                    return redirect("parlays:detail", pk=parlay.id)
+                    return _redirect_after_parlay_create(request, parlay)
 
                 method = SUBMISSION_MANUAL
 
@@ -310,9 +313,7 @@ def create_parlay(request):
 
                     request.session.pop("pending_link_initial", None)
 
-                    request.session[f"creator_{parlay.id}"] = True
-
-                    return redirect("parlays:detail", pk=parlay.id)
+                    return _redirect_after_parlay_create(request, parlay)
 
                 show_review = True
 
@@ -346,13 +347,16 @@ def create_parlay(request):
 
 
 
+    if not method:
+        method = SUBMISSION_MANUAL
+
     meta = Meta(
 
         request=request,
 
-        title="Create a Parlay — ParlaySplit",
+        title="Create your Parlay — ParlaySplit",
 
-        description="Choose how to submit your bet slip for parlay analysis.",
+        description="Choose how you want to submit your bet!",
 
     )
 
@@ -430,11 +434,13 @@ def parlay_detail(request, pk):
 
 
 
-    join_form = ParticipantJoinForm(parlay=parlay)
+    join_form = _join_form_for(request, parlay)
 
     edit_form = None
 
     is_creator = request.session.get(f"creator_{parlay.id}") is True
+
+    ownership_action_error = None
 
 
 
@@ -446,7 +452,7 @@ def parlay_detail(request, pk):
 
         if action == "join":
 
-            join_form = ParticipantJoinForm(request.POST, parlay=parlay)
+            join_form = _join_form_for(request, parlay, data=request.POST)
 
             join_ok = join_form.is_valid()
 
@@ -468,7 +474,7 @@ def parlay_detail(request, pk):
 
                 )
 
-                join_form = ParticipantJoinForm(parlay=parlay)
+                join_form = _join_form_for(request, parlay)
 
             if request.headers.get("HX-Request"):
 
@@ -478,13 +484,71 @@ def parlay_detail(request, pk):
 
                     "parlays/partials/parlay_ownership_inner.html",
 
-                    _parlay_context(request, parlay, join_form),
+                    _parlay_context(
+
+                        request,
+
+                        parlay,
+
+                        join_form,
+
+                        ownership_action_error=ownership_action_error,
+
+                    ),
 
                 )
 
             if join_ok:
 
                 return redirect("parlays:detail", pk=parlay.id)
+
+
+
+        if is_creator and action in ("approve_participant", "remove_participant"):
+
+            ownership_action_error = _handle_participant_action(
+
+                request,
+
+                parlay,
+
+                action,
+
+            )
+
+            parlay = get_object_or_404(
+
+                Parlay.objects.prefetch_related("legs", "participants"),
+
+                pk=pk,
+
+            )
+
+            join_form = _join_form_for(request, parlay)
+
+            if request.headers.get("HX-Request"):
+
+                return render(
+
+                    request,
+
+                    "parlays/partials/parlay_ownership_inner.html",
+
+                    _parlay_context(
+
+                        request,
+
+                        parlay,
+
+                        join_form,
+
+                        ownership_action_error=ownership_action_error,
+
+                    ),
+
+                )
+
+            return redirect("parlays:detail", pk=parlay.id)
 
 
 
@@ -538,6 +602,15 @@ def parlay_detail(request, pk):
 
     ctx["is_creator"] = is_creator
 
+    ctx["show_share_intro"] = is_creator and request.session.pop(
+        f"show_share_intro_{parlay.id}",
+        False,
+    )
+
+    ctx["host_url"] = parlay.host_url if is_creator else None
+
+    ctx["host_code"] = parlay.host_code if is_creator else None
+
     ctx["leg_type_choices"] = LegType.choices
 
     ctx["max_legs"] = settings.MAX_LEGS
@@ -548,13 +621,77 @@ def parlay_detail(request, pk):
 
 
 
-def _parlay_context(request, parlay, join_form):
+def _join_form_for(request, parlay, data=None):
+
+    kwargs = {"parlay": parlay, "session_key": request.session.session_key or ""}
+
+    if data is not None:
+
+        return ParticipantJoinForm(data, **kwargs)
+
+    return ParticipantJoinForm(**kwargs)
+
+
+
+
+
+def _handle_participant_action(request, parlay, action: str) -> str | None:
+
+    raw_id = request.POST.get("participant_id")
+
+    if not raw_id:
+
+        return "Invalid participant."
+
+    participant = get_object_or_404(Participant, pk=raw_id, parlay=parlay)
+
+    if action == "remove_participant":
+
+        participant.delete()
+
+        return None
+
+    if participant.status != ParticipantStatus.PENDING:
+
+        return "That request is no longer pending."
+
+    if parlay.total_contributions + participant.contribution_amount > parlay.max_friends_stake:
+
+        return (
+
+            f"Cannot approve {participant.nickname}: friends split is already full."
+
+        )
+
+    participant.status = ParticipantStatus.APPROVED
+
+    participant.save(update_fields=["status"])
+
+    return None
+
+
+
+
+
+def _parlay_context(request, parlay, join_form, ownership_action_error=None):
 
     from .utils import build_ownership_bar, ownership_color
 
 
 
-    participants = list(parlay.participants.order_by("joined_at"))
+    is_creator = request.session.get(f"creator_{parlay.id}") is True
+
+    approved = list(
+
+        parlay.participants.filter(status=ParticipantStatus.APPROVED).order_by("joined_at"),
+
+    )
+
+    pending = list(
+
+        parlay.participants.filter(status=ParticipantStatus.PENDING).order_by("joined_at"),
+
+    )
 
     rows = [
 
@@ -572,11 +709,15 @@ def _parlay_context(request, parlay, join_form):
 
             "color": ownership_color(is_host=True),
 
+            "is_pending": False,
+
+            "participant": None,
+
         },
 
     ]
 
-    for friend_index, p in enumerate(participants):
+    for friend_index, p in enumerate(approved):
 
         rows.append(
 
@@ -596,9 +737,67 @@ def _parlay_context(request, parlay, join_form):
 
                 "color": ownership_color(is_host=False, friend_index=friend_index),
 
+                "is_pending": False,
+
             }
 
         )
+
+    for p in pending:
+
+        rows.append(
+
+            {
+
+                "is_host": False,
+
+                "participant": p,
+
+                "nickname": p.nickname,
+
+                "contribution": p.contribution_amount,
+
+                "ownership": None,
+
+                "estimated": None,
+
+                "color": ownership_color(is_host=False, friend_index=len(approved)),
+
+                "is_pending": True,
+
+            }
+
+        )
+
+    session_key = request.session.session_key or ""
+
+    user_pending_request = (
+
+        parlay.participants.filter(
+
+            session_key=session_key,
+
+            status=ParticipantStatus.PENDING,
+
+        ).first()
+
+        if session_key
+
+        else None
+
+    )
+
+    has_pending_participants = bool(pending)
+
+    show_join_form = (
+
+        parlay.status == ParlayStatus.OPEN
+
+        and parlay.remaining_wager > 0
+
+        and user_pending_request is None
+
+    )
 
     return {
 
@@ -608,13 +807,27 @@ def _parlay_context(request, parlay, join_form):
 
         "participant_rows": rows,
 
-        "ownership_segments": build_ownership_bar(rows),
+        "ownership_segments": build_ownership_bar(
+
+            [r for r in rows if not r.get("is_pending")],
+
+        ),
 
         "total_contributions": parlay.total_contributions,
 
         "remaining_wager": parlay.remaining_wager,
 
         "share_url": parlay.share_url,
+
+        "is_creator": is_creator,
+
+        "has_pending_participants": has_pending_participants,
+
+        "user_pending_request": user_pending_request,
+
+        "show_join_form": show_join_form,
+
+        "ownership_action_error": ownership_action_error,
 
     }
 
@@ -670,12 +883,38 @@ def copy_link_fragment(request, pk):
 
 
 
-def set_creator_session(request, pk):
-
-    parlay = get_object_or_404(Parlay, pk=pk)
-
+@require_GET
+def host_parlay(request, host_code):
+    code = (host_code or "").strip()
+    if len(code) != 5 or not code.isdigit():
+        raise Http404()
+    parlay = get_object_or_404(Parlay, host_code=code)
     request.session[f"creator_{parlay.id}"] = True
-
     return redirect("parlays:detail", pk=parlay.id)
+
+
+@require_http_methods(["GET", "POST"])
+def host_lookup(request):
+    error = None
+    submitted_code = ""
+    if request.method == "POST":
+        submitted_code = (request.POST.get("host_code") or "").strip()
+        if len(submitted_code) == 5 and submitted_code.isdigit():
+            if Parlay.objects.filter(host_code=submitted_code).exists():
+                return redirect("parlays:host", host_code=submitted_code)
+            error = "No parlay found for that code. Check the number and try again."
+        else:
+            error = "Enter a valid 5-digit host code."
+    return render(
+        request,
+        "parlays/host_lookup.html",
+        {"error": error, "submitted_code": submitted_code},
+    )
+
+
+def set_creator_session(request, pk):
+    parlay = get_object_or_404(Parlay, pk=pk)
+    request.session[f"creator_{parlay.id}"] = True
+    return redirect("parlays:host", host_code=parlay.host_code)
 
 

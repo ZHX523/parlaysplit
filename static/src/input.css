@@ -21,11 +21,41 @@
   .btn-secondary {
     @apply inline-flex items-center justify-center rounded-xl border border-slate-700 bg-slate-800 px-5 py-3 font-medium text-slate-100 active:scale-[0.98] transition-transform;
   }
+  .btn-check-parlay {
+    @apply inline-flex items-center justify-center rounded-xl border-0 cursor-pointer bg-sky-400 px-5 py-3 font-semibold !text-slate-900 shadow-lg shadow-sky-400/25 active:scale-[0.98] transition-transform;
+  }
+  .btn-nav-group {
+    @apply grid grid-cols-2 gap-2 w-[12.75rem];
+  }
+  .btn-nav {
+    @apply inline-flex items-center justify-center gap-1.5 w-full min-w-0 py-2 px-2 text-sm leading-tight whitespace-nowrap;
+  }
+  .btn-nav-icon {
+    @apply w-4 h-4 shrink-0 block;
+  }
+  .btn-nav-plus {
+    @apply inline-flex items-center justify-center w-4 h-4 shrink-0 text-lg font-bold leading-none;
+  }
+  .btn-nav-wide {
+    @apply flex w-full items-center justify-center gap-2 py-3 px-5 text-base leading-tight;
+  }
+  .host-action-btn {
+    @apply inline-flex items-center justify-center rounded-lg px-2 py-1 text-[0.6875rem] font-semibold leading-tight border cursor-pointer whitespace-nowrap;
+  }
+  .host-action-approve {
+    @apply bg-emerald-500/15 text-emerald-300 border-emerald-500/40;
+  }
+  .host-action-remove {
+    @apply bg-red-500/12 text-red-300 border-red-500/35;
+  }
   .card {
     @apply rounded-2xl border border-slate-800 bg-slate-900/80 p-4;
   }
   .label {
     @apply block text-xs font-medium text-slate-400 mb-1 uppercase tracking-wide;
+  }
+  .label-normal {
+    @apply block text-xs font-medium text-slate-400 mb-1;
   }
   .input-field {
     @apply w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-slate-100 placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none;
@@ -41,6 +71,21 @@
   }
   .method-card-active {
     @apply border-emerald-500 bg-emerald-500/10;
+  }
+  .method-card-disabled {
+    @apply opacity-45 cursor-not-allowed border-slate-800 bg-slate-800/50;
+  }
+  .method-card-disabled:active {
+    transform: none;
+  }
+  .method-card-disabled .method-card-title {
+    @apply text-slate-500;
+  }
+  .method-card-disabled .method-card-desc {
+    @apply text-slate-600;
+  }
+  .coming-soon-panel {
+    @apply rounded-xl border border-dashed border-slate-600 bg-slate-800/40;
   }
   .method-card-title {
     @apply font-semibold text-slate-100 text-[0.9375rem];

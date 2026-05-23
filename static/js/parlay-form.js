@@ -558,6 +558,78 @@
 
 
 
+  function legTypeHintsFor(root) {
+
+    try {
+
+      return JSON.parse(root.dataset.legTypeHints || "{}");
+
+    } catch {
+
+      return {};
+
+    }
+
+  }
+
+
+
+  function updateLegDescriptionPlaceholder(row, root) {
+
+    if (!row) return;
+
+    const select = row.querySelector('[name="leg_type"]');
+
+    const input = row.querySelector("[data-leg-description]");
+
+    if (!select || !input) return;
+
+    const hints = legTypeHintsFor(root);
+
+    input.placeholder = hints[select.value] || "";
+
+  }
+
+
+
+  function syncAllLegDescriptionPlaceholders(root) {
+
+    root.querySelectorAll("[data-leg-row]").forEach((row) => {
+
+      updateLegDescriptionPlaceholder(row, root);
+
+    });
+
+  }
+
+
+
+  function setupLegTypeHintListeners(root) {
+
+    if (root._legHintsBound) return;
+
+    root._legHintsBound = true;
+
+    root.addEventListener("change", (e) => {
+
+      if (e.target.matches('[name="leg_type"]')) {
+
+        updateLegDescriptionPlaceholder(
+
+          e.target.closest("[data-leg-row]"),
+
+          root,
+
+        );
+
+      }
+
+    });
+
+  }
+
+
+
   function updateRemoveButtons(root) {
 
     const rows = root.querySelectorAll("[data-leg-row]");
@@ -599,6 +671,10 @@
       });
 
     }
+
+
+
+    updateLegDescriptionPlaceholder(row, root);
 
   }
 
@@ -656,6 +732,8 @@
 
     updateRemoveButtons(root);
 
+    updateLegDescriptionPlaceholder(added, root);
+
   }
 
 
@@ -668,6 +746,10 @@
 
 
 
+    setupLegTypeHintListeners(root);
+
+
+
     if (!legsReady) {
 
       root._parlayLegsReady = true;
@@ -675,6 +757,10 @@
       root.querySelectorAll("[data-leg-row]").forEach((row) => bindLegRow(row, root, maxLegs));
 
     }
+
+
+
+    syncAllLegDescriptionPlaceholders(root);
 
 
 

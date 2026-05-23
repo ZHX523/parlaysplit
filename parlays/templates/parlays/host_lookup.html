@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+
+
+{% block content %}
+
+<h1 class="text-2xl font-bold mb-1 flex items-center gap-2">
+  {% include "parlays/partials/icon_search.html" with icon_class="w-7 h-7 text-sky-400" %}
+  Find Parlay
+</h1>
+
+<p class="text-slate-400 text-sm mb-6">Enter your 5-digit host code to open and manage your parlay.</p>
+
+
+
+<section class="card">
+
+  <form method="post" class="space-y-4">
+
+    {% csrf_token %}
+
+    <div>
+
+      <label class="label" for="host_code">Host code</label>
+
+      <input type="text"
+
+             name="host_code"
+
+             id="host_code"
+
+             class="input-field text-center text-2xl font-bold tracking-[0.35em] font-mono"
+
+             placeholder="00000"
+
+             inputmode="numeric"
+
+             pattern="[0-9]{5}"
+
+             maxlength="5"
+
+             minlength="5"
+
+             autocomplete="off"
+
+             required
+
+             value="{{ submitted_code|default:'' }}">
+
+      {% if error %}
+
+      <p class="text-red-400 text-sm mt-2">{{ error }}</p>
+
+      {% endif %}
+
+    </div>
+
+    <button type="submit" class="btn-check-parlay btn-nav-wide gap-2" aria-label="Find parlay">
+      {% include "parlays/partials/btn_label_lookup_parlay.html" with icon_class="btn-nav-icon" %}
+    </button>
+
+  </form>
+
+</section>
+
+
+
+<p class="text-xs text-slate-500 text-center mt-4">
+
+  You received this code when you created your parlay. It is not shown on the public share page.
+
+</p>
+
+{% endblock %}
+
+

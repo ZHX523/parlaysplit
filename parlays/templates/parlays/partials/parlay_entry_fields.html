@@ -1,151 +1,161 @@
-{% load static %}
-{# form, leg_type_choices, max_legs #}
-<div class="space-y-4" data-parlay-form data-max-legs="{{ max_legs }}">
-
-  <div>
-    <label class="label" for="{{ form.sportsbook.id_for_label }}">Sportsbook</label>
-    {{ form.sportsbook }}
-  </div>
-
-  <div class="grid grid-cols-2 gap-3">
-    <div>
-      <label class="label" for="{{ form.odds_american.id_for_label }}">Odds (American)</label>
-      <input type="number"
-             name="odds_american"
-             id="{{ form.odds_american.id_for_label }}"
-             class="input-field"
-             placeholder="+450"
-             step="1"
-             value="{{ form.odds_american.value|default_if_none:'' }}">
-      {% if form.odds_american.errors %}<p class="text-red-400 text-sm mt-1">{{ form.odds_american.errors.0 }}</p>{% endif %}
-    </div>
-    <div>
-      <label class="label" for="{{ form.wager_amount.id_for_label }}">Wager ($)</label>
-      <input type="text"
-             name="wager_amount"
-             id="{{ form.wager_amount.id_for_label }}"
-             class="input-field"
-             placeholder="$100.00"
-             inputmode="decimal"
-             autocomplete="off"
-             data-format-wager
-             value="{{ form.wager_amount.value|default_if_none:'' }}">
-      {% if form.wager_amount.errors %}<p class="text-red-400 text-sm mt-1">{{ form.wager_amount.errors.0 }}</p>{% endif %}
-    </div>
-  </div>
-
-  {% include "parlays/partials/parlay_payout_box.html" with live=True payout_amount=form.instance.potential_payout %}
-
-  <div>
-    <label class="label" for="{{ form.split_offered_percent.id_for_label }}">Split offered (%)</label>
-    <input type="text"
-           name="split_offered_percent"
-           id="{{ form.split_offered_percent.id_for_label }}"
-           class="input-field"
-           placeholder="50%"
-           inputmode="numeric"
-           autocomplete="off"
-           data-format-split
-           value="{{ form.split_offered_percent.value|default_if_none:'' }}">
-    <div class="mt-3 flex items-center gap-3">
-      <span class="text-xs text-slate-500 shrink-0">1%</span>
-      <input type="range"
-             min="1"
-             max="100"
-             step="1"
-             value="{% if form.split_offered_percent.value %}{{ form.split_offered_percent.value|floatformat:0 }}{% else %}100{% endif %}"
-             class="split-slider flex-1 min-w-0"
-             data-split-slider
-             aria-label="Adjust split offered percentage">
-      <span class="text-xs text-slate-500 shrink-0">100%</span>
-    </div>
-    <p class="text-[15px] text-slate-400 leading-relaxed mt-2" data-split-hint>
-      Max friends can claim
-      <span class="font-bold text-red-400" data-split-friends-pct>—</span>
-      of the wager; you keep at least
-      <span class="font-bold text-emerald-400" data-split-host-pct>—</span>.
-    </p>
-    {% if form.split_offered_percent.errors %}<p class="text-red-400 text-sm mt-1">{{ form.split_offered_percent.errors.0 }}</p>{% endif %}
-  </div>
-
-  <div>
-    <div class="flex items-center justify-between mb-3">
-      <span class="label mb-0">Parlay legs</span>
-      <button type="button" class="btn-add-leg" data-add-leg>
-        + Add Leg
-      </button>
-    </div>
-
-    <div data-legs-container class="legs-list">
-      {% for leg in form.legs_initial %}
-      <div class="leg-row space-y-2" data-leg-row>
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-medium text-slate-400" data-leg-label>Leg {{ forloop.counter }}</span>
-          <button type="button" class="btn-remove-leg" data-remove-leg>Remove</button>
-        </div>
-        <div>
-          <label class="label">Bet type</label>
-          <select class="input-field" name="leg_type">
-            {% for value, label in leg_type_choices %}
-            <option value="{{ value }}" {% if leg.leg_type == value %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div>
-          <label class="label">Brief description</label>
-          <input type="text"
-                 class="input-field"
-                 name="leg_description"
-                 value="{{ leg.description }}"
-                 placeholder="e.g. Lakers -3.5"
-                 maxlength="500">
-        </div>
-      </div>
-      {% empty %}
-      <div class="leg-row space-y-2" data-leg-row>
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-medium text-slate-400" data-leg-label>Leg 1</span>
-          <button type="button" class="btn-remove-leg" data-remove-leg>Remove</button>
-        </div>
-        <div>
-          <label class="label">Bet type</label>
-          <select class="input-field" name="leg_type">
-            {% for value, label in leg_type_choices %}
-            <option value="{{ value }}">{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div>
-          <label class="label">Brief description</label>
-          <input type="text" class="input-field" name="leg_description" placeholder="e.g. Lakers -3.5" maxlength="500">
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-
-  <template data-leg-template>
-    <div class="leg-row space-y-2" data-leg-row>
-      <div class="flex items-center justify-between">
-        <span class="text-xs font-medium text-slate-400" data-leg-label>Leg</span>
-        <button type="button" class="btn-remove-leg" data-remove-leg>Remove</button>
-      </div>
-      <div>
-        <label class="label">Bet type</label>
-        <select class="input-field" name="leg_type">
-          {% for value, label in leg_type_choices %}
-          <option value="{{ value }}">{{ label }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <label class="label">Brief description</label>
-        <input type="text" class="input-field" name="leg_description" placeholder="e.g. Chiefs ML" maxlength="500">
-      </div>
-    </div>
-  </template>
-
-  {% if form.non_field_errors %}
-  <p class="text-red-400 text-sm">{{ form.non_field_errors.0 }}</p>
-  {% endif %}
-</div>
+{% load static parlay_extras %}
+{# form, leg_type_choices, max_legs #}
+<div class="space-y-4"
+     data-parlay-form
+     data-max-legs="{{ max_legs }}"
+     data-leg-type-hints="{% leg_type_hints_attr %}">
+
+  <div class="grid grid-cols-2 gap-3">
+    <div>
+      <label class="label" for="{{ form.odds_american.id_for_label }}">Odds (American)</label>
+      <input type="number"
+             name="odds_american"
+             id="{{ form.odds_american.id_for_label }}"
+             class="input-field"
+             placeholder="+450"
+             step="1"
+             value="{{ form.odds_american.value|default_if_none:'' }}">
+      {% if form.odds_american.errors %}<p class="text-red-400 text-sm mt-1">{{ form.odds_american.errors.0 }}</p>{% endif %}
+    </div>
+    <div>
+      <label class="label" for="{{ form.wager_amount.id_for_label }}">Wager ($)</label>
+      <input type="text"
+             name="wager_amount"
+             id="{{ form.wager_amount.id_for_label }}"
+             class="input-field"
+             placeholder="$100.00"
+             inputmode="decimal"
+             autocomplete="off"
+             data-format-wager
+             value="{{ form.wager_amount.value|default_if_none:'' }}">
+      {% if form.wager_amount.errors %}<p class="text-red-400 text-sm mt-1">{{ form.wager_amount.errors.0 }}</p>{% endif %}
+    </div>
+  </div>
+
+  {% include "parlays/partials/parlay_payout_box.html" with live=True payout_amount=form.instance.potential_payout %}
+
+  <div>
+    <label class="label" for="{{ form.split_offered_percent.id_for_label }}">Split offered (%)</label>
+    <input type="text"
+           name="split_offered_percent"
+           id="{{ form.split_offered_percent.id_for_label }}"
+           class="input-field"
+           placeholder="50%"
+           inputmode="numeric"
+           autocomplete="off"
+           data-format-split
+           value="{{ form.split_offered_percent.value|default_if_none:'' }}">
+    <div class="mt-3 flex items-center gap-3">
+      <span class="text-xs text-slate-500 shrink-0">1%</span>
+      <input type="range"
+             min="1"
+             max="100"
+             step="1"
+             value="{% if form.split_offered_percent.value %}{{ form.split_offered_percent.value|floatformat:0 }}{% else %}100{% endif %}"
+             class="split-slider flex-1 min-w-0"
+             data-split-slider
+             aria-label="Adjust split offered percentage">
+      <span class="text-xs text-slate-500 shrink-0">100%</span>
+    </div>
+    <p class="text-[15px] text-slate-400 leading-relaxed mt-2" data-split-hint>
+      Max friends can claim
+      <span class="font-bold text-red-400" data-split-friends-pct>—</span>
+      of the wager; you keep at least
+      <span class="font-bold text-emerald-400" data-split-host-pct>—</span>.
+    </p>
+    {% if form.split_offered_percent.errors %}<p class="text-red-400 text-sm mt-1">{{ form.split_offered_percent.errors.0 }}</p>{% endif %}
+  </div>
+
+  <div>
+    <div class="flex items-center justify-between mb-3">
+      <span class="label mb-0">Parlay legs</span>
+      <button type="button" class="btn-add-leg" data-add-leg>
+        + Add Leg
+      </button>
+    </div>
+
+    <div data-legs-container class="legs-list">
+      {% for leg in form.legs_initial %}
+      <div class="leg-row space-y-2" data-leg-row>
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-400" data-leg-label>Leg {{ forloop.counter }}</span>
+          <button type="button" class="btn-remove-leg" data-remove-leg>Remove</button>
+        </div>
+        <div>
+          <label class="label">Bet type</label>
+          <select class="input-field" name="leg_type">
+            {% for value, label in leg_type_choices %}
+            <option value="{{ value }}" {% if leg.leg_type == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="label">Brief description</label>
+          <input type="text"
+                 class="input-field"
+                 name="leg_description"
+                 data-leg-description
+                 value="{{ leg.description }}"
+                 placeholder=""
+                 maxlength="500">
+        </div>
+      </div>
+      {% empty %}
+      <div class="leg-row space-y-2" data-leg-row>
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-400" data-leg-label>Leg 1</span>
+          <button type="button" class="btn-remove-leg" data-remove-leg>Remove</button>
+        </div>
+        <div>
+          <label class="label">Bet type</label>
+          <select class="input-field" name="leg_type">
+            {% for value, label in leg_type_choices %}
+            <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="label">Brief description</label>
+          <input type="text"
+                 class="input-field"
+                 name="leg_description"
+                 data-leg-description
+                 placeholder=""
+                 maxlength="500">
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <template data-leg-template>
+    <div class="leg-row space-y-2" data-leg-row>
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-medium text-slate-400" data-leg-label>Leg</span>
+        <button type="button" class="btn-remove-leg" data-remove-leg>Remove</button>
+      </div>
+      <div>
+        <label class="label">Bet type</label>
+        <select class="input-field" name="leg_type">
+          {% for value, label in leg_type_choices %}
+          <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="label">Brief description</label>
+        <input type="text"
+               class="input-field"
+               name="leg_description"
+               data-leg-description
+               placeholder=""
+               maxlength="500">
+      </div>
+    </div>
+  </template>
+
+  {% if form.non_field_errors %}
+  <p class="text-red-400 text-sm">{{ form.non_field_errors.0 }}</p>
+  {% endif %}
+</div>
+

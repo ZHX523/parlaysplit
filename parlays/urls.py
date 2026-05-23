@@ -15,9 +15,9 @@ urlpatterns = [
     path("", views.landing, name="landing"),
 
     path("create/", views.create_parlay, name="create"),
-
+    path("my-parlay/", views.host_lookup, name="host_lookup"),
+    path("host/<str:host_code>/", views.host_parlay, name="host"),
     path("p/<uuid:pk>/", views.parlay_detail, name="detail"),
-
     path("p/<uuid:pk>/creator/", views.set_creator_session, name="set_creator"),
 
 

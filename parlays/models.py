@@ -18,55 +18,23 @@ from django.utils import timezone
 
 
 
-class Sportsbook(models.TextChoices):
-
-    FANDUEL = "fanduel", "FanDuel"
-
-    DRAFTKINGS = "draftkings", "DraftKings"
-
-    KALSHI = "kalshi", "Kalshi"
-
-    BETMGM = "betmgm", "BetMGM"
-
-    CAESARS = "caesars", "Caesars"
-
-    ESPNBET = "espnbet", "ESPN BET"
-
-    OTHER = "other", "Other"
-
-
-
-
-
-MVP_SPORTSBOOK_CHOICES = (
-
-    (Sportsbook.FANDUEL, "FanDuel"),
-
-    (Sportsbook.DRAFTKINGS, "DraftKings"),
-
-    (Sportsbook.KALSHI, "Kalshi"),
-
-)
-
-
-
-
-
 class LegType(models.TextChoices):
 
     MONEYLINE = "moneyline", "Moneyline"
 
     SPREAD = "spread", "Spread"
 
-    TOTAL = "total", "Total (O/U)"
+    TOTAL_POINTS = "total_points", "Total Points"
 
-    PLAYER_PROP = "player_prop", "Player prop"
-
-    TEAM_PROP = "team_prop", "Team prop"
-
-    OTHER = "other", "Other"
+    PLAYER_PROP = "player_prop", "Player Prop"
 
 
+LEG_TYPE_DESCRIPTION_HINTS = {
+    LegType.MONEYLINE: "Knicks to win",
+    LegType.SPREAD: "Chiefs -3.5",
+    LegType.TOTAL_POINTS: "Over 8.5 runs",
+    LegType.PLAYER_PROP: "Jalen Brunson Over 25 points",
+}
 
 
 
@@ -93,18 +61,15 @@ class Parlay(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     slug = models.SlugField(max_length=12, unique=True, editable=False)
+    host_code = models.CharField(
+        max_length=5,
+        unique=True,
+        blank=True,
+        db_index=True,
+        help_text="5-digit code for the host to find and manage this parlay.",
+    )
 
     creator_nickname = models.CharField(max_length=64, default="Host")
-
-    sportsbook = models.CharField(
-
-        max_length=32,
-
-        choices=Sportsbook.choices,
-
-        default=Sportsbook.FANDUEL,
-
-    )
 
     odds_american = models.IntegerField(
 
@@ -211,38 +176,56 @@ class Parlay(models.Model):
 
 
     def save(self, *args, **kwargs):
-
         if not self.slug:
-
             self.slug = uuid.uuid4().hex[:12]
+        if not self.host_code:
+            from .utils import generate_host_code
 
+            self.host_code = generate_host_code()
         super().save(*args, **kwargs)
 
-
-
     @property
-
     def share_url(self):
-
+        """Public link for friends to view and join."""
         return f"{settings.SITE_URL}/p/{self.id}/"
 
+    @property
+    def host_url(self):
+        """Host link to manage the parlay (do not share with participants)."""
+        return f"{settings.SITE_URL}/host/{self.host_code}/"
 
+
+
+    def _contributions_sum(self, *, status: str | None = None) -> Decimal:
+        qs = self.participants
+        if status is not None:
+            qs = qs.filter(status=status)
+        total = qs.aggregate(total=Sum("contribution_amount"))["total"]
+        return total or Decimal("0.00")
 
     @property
 
     def total_contributions(self) -> Decimal:
 
-        total = self.participants.aggregate(total=Sum("contribution_amount"))["total"]
+        return self._contributions_sum(status=ParticipantStatus.APPROVED)
 
-        return total or Decimal("0.00")
+    @property
 
+    def pending_contributions_total(self) -> Decimal:
 
+        return self._contributions_sum(status=ParticipantStatus.PENDING)
 
     @property
 
     def participant_count(self) -> int:
 
         return self.participants.count()
+
+    @property
+
+    def approved_participant_count(self) -> int:
+
+        return self.participants.filter(status=ParticipantStatus.APPROVED).count()
 
 
 
@@ -286,9 +269,11 @@ class Parlay(models.Model):
 
     def remaining_for_friends(self) -> Decimal:
 
-        """Wager dollars still available for friends to claim."""
+        """Wager dollars still available for friends to claim (approved + pending holds)."""
 
-        remaining = self.max_friends_stake - self.total_contributions
+        claimed = self.total_contributions + self.pending_contributions_total
+
+        remaining = self.max_friends_stake - claimed
 
         return max(Decimal("0.00"), remaining).quantize(Decimal("0.01"))
 
@@ -384,7 +369,7 @@ class ParlayLeg(models.Model):
 
         choices=LegType.choices,
 
-        default=LegType.OTHER,
+        default=LegType.MONEYLINE,
 
     )
 
@@ -408,6 +393,11 @@ class ParlayLeg(models.Model):
 
 
 
+
+
+class ParticipantStatus(models.TextChoices):
+    PENDING = "pending", "Pending"
+    APPROVED = "approved", "Approved"
 
 
 class Participant(models.Model):
@@ -435,6 +425,13 @@ class Participant(models.Model):
     )
 
     session_key = models.CharField(max_length=64, blank=True, db_index=True)
+
+    status = models.CharField(
+        max_length=16,
+        choices=ParticipantStatus.choices,
+        default=ParticipantStatus.APPROVED,
+        db_index=True,
+    )
 
     joined_at = models.DateTimeField(auto_now_add=True)
 

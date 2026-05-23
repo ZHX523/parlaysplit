@@ -1,3 +1,4 @@
+import random
 from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
@@ -5,6 +6,17 @@ from django.conf import settings
 from .models import Parlay
 
 DEFAULT_CREATOR_NICKNAME = "Host"
+
+
+def generate_host_code() -> str:
+    """Unique 5-digit code (00000–99999) for host parlay lookup."""
+    from .models import Parlay
+
+    for _ in range(200):
+        code = f"{random.randint(0, 99999):05d}"
+        if not Parlay.objects.filter(host_code=code).exists():
+            return code
+    raise RuntimeError("Could not allocate a unique host code.")
 
 
 def format_dollars(value) -> str:

@@ -1,0 +1,13 @@
+{# Optional feature_hint for feature-specific copy #}
+<div class="coming-soon-panel text-center py-10 px-4">
+  <p class="coming-soon-icon text-5xl leading-none mb-4" aria-hidden="true">🚧</p>
+  <h2 class="text-lg font-semibold text-slate-200">Feature Coming Soon!</h2>
+  <p class="text-sm text-slate-500 mt-2 max-w-sm mx-auto leading-relaxed">
+    {% if feature_hint %}
+    {{ feature_hint }}
+    {% else %}
+    We're still building this — check back soon.
+    {% endif %}
+  </p>
+</div>
+

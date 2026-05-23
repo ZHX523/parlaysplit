@@ -14,8 +14,6 @@ from .models import (
 
     LegType,
 
-    MVP_SPORTSBOOK_CHOICES,
-
     Parlay,
 
     ParlayLeg,
@@ -23,6 +21,8 @@ from .models import (
     ParlayStatus,
 
     Participant,
+
+    ParticipantStatus,
 
 )
 
@@ -54,7 +54,7 @@ def parse_legs_from_data(data) -> list[dict]:
 
         if leg_type not in valid_types:
 
-            leg_type = LegType.OTHER
+            leg_type = LegType.MONEYLINE
 
         legs.append({"leg_type": leg_type, "description": description[:500]})
 
@@ -80,7 +80,7 @@ def legs_initial_from_text(text: str) -> list[dict]:
 
         return default_legs_initial()
 
-    return [{"leg_type": LegType.OTHER, "description": line} for line in lines]
+    return [{"leg_type": LegType.MONEYLINE, "description": line} for line in lines]
 
 
 
@@ -93,21 +93,12 @@ class ParlayCreateForm(forms.ModelForm):
         model = Parlay
 
         fields = [
-
-            "sportsbook",
-
             "odds_american",
-
             "wager_amount",
-
             "split_offered_percent",
-
         ]
 
         widgets = {
-
-            "sportsbook": forms.Select(attrs={"class": "input-field"}),
-
             "odds_american": forms.NumberInput(
 
                 attrs={
@@ -161,12 +152,9 @@ class ParlayCreateForm(forms.ModelForm):
 
 
     def __init__(self, *args, external_link: str = "", legs_initial=None, **kwargs):
-
+        initial = kwargs.get("initial") or {}
         super().__init__(*args, **kwargs)
-
         self.external_link = external_link
-
-        self.fields["sportsbook"].choices = MVP_SPORTSBOOK_CHOICES
 
         if not self.is_bound and not getattr(self.instance, "pk", None):
 
@@ -216,20 +204,6 @@ class ParlayCreateForm(forms.ModelForm):
 
 
 
-    def clean_sportsbook(self):
-
-        sportsbook = self.cleaned_data.get("sportsbook")
-
-        valid = {c[0] for c in MVP_SPORTSBOOK_CHOICES}
-
-        if sportsbook not in valid:
-
-            return MVP_SPORTSBOOK_CHOICES[0][0]
-
-        return sportsbook
-
-
-
     def clean(self):
 
         cleaned = super().clean()
@@ -269,19 +243,12 @@ class ParlayCreateForm(forms.ModelForm):
 
 
     def save(self, commit=True):
-
         parlay = super().save(commit=False)
-
         parlay.potential_payout = self.cleaned_data["potential_payout"]
-
         if not parlay.creator_nickname:
-
             parlay.creator_nickname = DEFAULT_CREATOR_NICKNAME
-
         if self.external_link:
-
             parlay.external_link = self.external_link
-
         if commit:
 
             parlay.save()
@@ -317,8 +284,11 @@ class ParlayCreateForm(forms.ModelForm):
 class ParlayEditForm(ParlayCreateForm):
 
     class Meta(ParlayCreateForm.Meta):
-
-        pass
+        fields = [
+            "odds_american",
+            "wager_amount",
+            "split_offered_percent",
+        ]
 
 
 
@@ -384,7 +354,7 @@ class ParticipantJoinForm(forms.ModelForm):
 
                     "class": "input-field",
 
-                    "placeholder": "Your name",
+                    "placeholder": "Name",
 
                     "autocomplete": "name",
 
@@ -396,9 +366,11 @@ class ParticipantJoinForm(forms.ModelForm):
 
 
 
-    def __init__(self, *args, parlay: Parlay | None = None, **kwargs):
+    def __init__(self, *args, parlay: Parlay | None = None, session_key: str = "", **kwargs):
 
         self.parlay = parlay
+
+        self._session_key = session_key
 
         super().__init__(*args, **kwargs)
 
@@ -417,6 +389,8 @@ class ParticipantJoinForm(forms.ModelForm):
         participant = super().save(commit=False)
 
         participant.contribution_amount = self.cleaned_data["contribution_amount"]
+
+        participant.status = ParticipantStatus.PENDING
 
         if self.parlay:
 
@@ -455,6 +429,18 @@ class ParticipantJoinForm(forms.ModelForm):
             if self.parlay.participants.filter(nickname__iexact=nickname).exists():
 
                 raise ValidationError("That name is already on this parlay.")
+
+            session_key = getattr(self, "_session_key", None)
+
+            if session_key and self.parlay.participants.filter(
+
+                session_key=session_key,
+
+                status=ParticipantStatus.PENDING,
+
+            ).exists():
+
+                raise ValidationError("You already have a pending request on this parlay.")
 
         return nickname
 
