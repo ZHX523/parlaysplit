@@ -1,0 +1,171 @@
+{% load parlay_extras %}
+<div id="ownership-sync"
+     data-footer-revision="{{ footer_revision }}"
+     data-join-footer-url="{{ join_footer_url }}"
+     {% if should_poll_ownership %}
+     hx-get="{{ ownership_poll_url }}"
+     hx-trigger="every 5s"
+     hx-select="#ownership-sync"
+     hx-target="#ownership-sync"
+     hx-swap="outerHTML"
+     hx-boost="false"
+     {% endif %}>
+  <div class="flex justify-between items-center mb-3 gap-2">
+    <h2 class="font-semibold text-sm text-slate-300">Ownership split</h2>
+    {% if is_creator %}
+    <form method="post" class="join-status-toggle" role="group" aria-label="New join requests">
+      {% csrf_token %}
+      <button type="submit"
+              name="action"
+              value="open_parlay"
+              class="join-status-toggle-btn join-status-toggle-btn-open{% if parlay.status == 'open' %} is-active{% endif %}"
+              {% if parlay.status == 'open' %}disabled aria-current="true"{% endif %}>
+        Open
+      </button>
+      <button type="submit"
+              name="action"
+              value="close_parlay"
+              class="join-status-toggle-btn join-status-toggle-btn-closed{% if parlay.status == 'locked' %} is-active{% endif %}"
+              {% if parlay.status == 'locked' %}disabled aria-current="true"{% endif %}>
+        Closed
+      </button>
+    </form>
+    {% elif parlay.status == "open" %}
+    <span class="status-badge status-open">OPEN</span>
+    {% elif parlay.status == "locked" %}
+    <span class="status-badge status-closed">CLOSED</span>
+    {% endif %}
+  </div>
+  <p class="text-xs text-slate-400 whitespace-nowrap mb-3">Based on {{ parlay.wager_amount|currency }} wager</p>
+
+  {% if ownership_action_error %}
+  <p class="text-red-400 text-sm mb-3">{{ ownership_action_error }}</p>
+  {% endif %}
+
+  {% if ownership_segments %}
+  <div class="ownership-bar mb-4" role="img" aria-label="Ownership split by participant">
+    {% for seg in ownership_segments %}
+    <div class="ownership-bar-segment"
+         style="width: {{ seg.percent }}%; background-color: {{ seg.color }};"
+         title="{{ seg.nickname }} — {{ seg.percent }}%"></div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="space-y-3 mb-4">
+    {% for row in participant_rows %}
+    <div class="ownership-participant-row">
+      <div class="min-w-0 flex-1 w-full">
+        <p class="font-medium flex items-center gap-2 flex-wrap">
+          <span class="ownership-swatch shrink-0" style="background-color: {{ row.color }};" aria-hidden="true"></span>
+          <span class="truncate">
+            {{ row.nickname }}
+            {% if row.is_pending %}
+            <span class="status-badge status-pending">Pending</span>
+            {% endif %}
+          </span>
+        </p>
+        <p class="text-xs text-slate-400 whitespace-nowrap ml-5">
+          {% if row.is_host %}
+          {{ row.contribution|currency }} of {{ parlay.wager_amount|currency }} wager
+          {% elif row.is_pending %}
+          {{ row.contribution|currency }} requested — awaiting host approval
+          {% else %}
+          {{ row.contribution|currency }} toward wager
+          {% endif %}
+        </p>
+      </div>
+      <div class="ownership-participant-meta text-sm">
+        {% if row.is_pending %}
+        <p class="text-xs text-amber-300 font-medium">Pending</p>
+        {% elif row.ownership is not None %}
+        <p style="color: {{ row.color }};" class="font-semibold">{{ row.ownership }}%</p>
+        {% if row.estimated %}
+        <p class="text-xs text-slate-400 whitespace-nowrap">~ Payout {{ row.estimated|currency }}</p>
+        {% endif %}
+        {% else %}—{% endif %}
+
+        {% if is_creator and row.participant and not row.is_host %}
+        <div class="ownership-host-actions">
+          {% if row.is_pending %}
+          <form method="post"
+                hx-post="{{ page_url }}"
+                hx-target="#ownership-panel"
+                hx-swap="innerHTML"
+                hx-boost="false"
+                class="host-action-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="approve_participant">
+            <input type="hidden" name="participant_id" value="{{ row.participant.id }}">
+            <button type="submit" class="host-action-btn host-action-approve">Approve</button>
+          </form>
+          {% endif %}
+          <form method="post"
+                hx-post="{{ page_url }}"
+                hx-target="#ownership-panel"
+                hx-swap="innerHTML"
+                hx-boost="false"
+                class="host-action-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="remove_participant">
+            <input type="hidden" name="participant_id" value="{{ row.participant.id }}">
+            <button type="submit" class="host-action-btn host-action-remove">Remove</button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if parlay.split_offered_percent < 100 or remaining_wager > 0 %}
+  <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 mb-4 text-xs">
+    {% if parlay.split_offered_percent < 100 %}
+    <p class="text-slate-400 font-medium min-w-0">
+      Split offered: {{ parlay.split_offered_percent|whole_percent }}% ({{ parlay.max_friends_stake|currency }} max for friends)
+      · Host reserved {{ parlay.host_reserved_percent|whole_percent }}%
+    </p>
+    {% else %}
+    <span class="min-w-0"></span>
+    {% endif %}
+    {% if remaining_wager > 0 %}
+    <p class="text-slate-400 font-medium whitespace-nowrap shrink-0">{{ remaining_wager|currency }} still available!</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if user_pending_request %}
+  <p class="text-sm text-amber-300 border-t border-slate-800 pt-4">
+    Your request for {{ user_pending_request.contribution_amount|currency }} is pending host approval.
+  </p>
+  {% elif not show_join_form and parlay.status == "locked" %}
+  <p class="text-sm text-slate-400 border-t border-slate-800 pt-4">
+    This parlay is closed and is not accepting new join requests.
+  </p>
+  {% elif not show_join_form and parlay.status == "open" %}
+  {% if is_creator %}
+  <p class="text-sm text-slate-100 border-t border-slate-800 pt-4">
+    Friends ({{ parlay.approved_participant_count }}) joined your parlay!
+    {{ total_contributions|currency }} claimed of your {{ parlay.max_friends_stake|currency }} split!
+  </p>
+  {% else %}
+  <p class="text-sm text-amber-300 border-t border-slate-800 pt-4">
+    {% if parlay.split_offered_percent < 100 %}
+    The full {{ parlay.max_friends_stake|currency }} split offered to friends has been claimed.
+    {% else %}
+    The full {{ parlay.wager_amount|currency }} wager has been claimed.
+    {% endif %}
+  </p>
+  {% endif %}
+  {% endif %}
+
+  {% if show_join_form %}
+  <p class="text-sm font-medium text-emerald-400 border-t border-slate-800 pt-4">
+    {% if user_approved_participant %}
+    You are locked in for {{ user_approved_participant.contribution_amount|currency }}! Request a higher contribution.
+    {% else %}
+    Join Parlay!
+    {% endif %}
+  </p>
+  {% endif %}
+</div>

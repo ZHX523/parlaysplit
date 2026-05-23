@@ -10,8 +10,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
-  <link rel="stylesheet" href="{% static 'css/output.css' %}?v=12">
-  <script src="{% static 'js/parlay-form.js' %}?v=7"></script>
+  <link rel="stylesheet" href="{% static 'css/output.css' %}?v=20">
+  <script src="{% static 'js/parlay-form.js' %}?v=15"></script>
   <script defer src="https://unpkg.com/alpinejs@3.14.3/dist/cdn.min.js"></script>
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
   {% if plausible_domain %}
@@ -53,7 +53,6 @@
       {% for disclaimer in legal_disclaimers %}
       <p>{{ disclaimer }}</p>
       {% endfor %}
-      <p class="text-slate-600">&copy; ParlaySplit — coordination tool only.</p>
     </div>
   </footer>
   {% block extra_js %}{% endblock %}

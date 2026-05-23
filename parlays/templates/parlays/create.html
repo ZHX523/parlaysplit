@@ -20,9 +20,27 @@
 
 <div hx-boost="false" x-data="{
 
-  method: '{{ submission_method|default:'manual' }}',
+  method: '{{ submission_method|default:'' }}',
 
-  pick(m) { this.method = m; }
+  methodPickerOpen: {% if manual_form.errors or submission_method %}false{% else %}true{% endif %},
+
+  methodLabels: {
+
+    manual: 'Enter Manually',
+
+    screenshot: 'Upload Screenshot',
+
+    link: 'Paste a Link',
+
+  },
+
+  pick(m) {
+
+    this.method = m;
+
+    this.methodPickerOpen = false;
+
+  },
 
 }" x-init="$nextTick(() => window.initParlayForms && window.initParlayForms())" class="space-y-4">
 
@@ -30,7 +48,27 @@
 
   <section class="card">
 
-    <div class="grid gap-3">
+    <button type="button"
+
+            x-show="!methodPickerOpen && method"
+
+            x-cloak
+
+            class="collapse-toggle w-full"
+
+            @click="methodPickerOpen = true"
+
+            :aria-expanded="methodPickerOpen">
+
+      <p class="min-w-0 flex-1 font-semibold text-slate-100 text-sm text-left" x-text="methodLabels[method]"></p>
+
+      <span class="text-xs font-semibold text-emerald-400 shrink-0 mr-2">Change</span>
+
+      <span class="collapse-chevron" aria-hidden="true">▼</span>
+
+    </button>
+
+    <div x-show="methodPickerOpen" x-cloak class="grid gap-3">
 
       <button type="button"
 

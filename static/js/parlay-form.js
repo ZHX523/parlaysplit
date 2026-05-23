@@ -298,9 +298,7 @@
 
     const friendsEl = root.querySelector("[data-split-friends-pct]");
 
-    const hostEl = root.querySelector("[data-split-host-pct]");
-
-    if (!friendsEl || !hostEl) return;
+    if (!friendsEl) return;
 
     const split = splitRawValueFromRoot(root);
 
@@ -308,19 +306,11 @@
 
       friendsEl.textContent = "—";
 
-      hostEl.textContent = "—";
-
       return;
 
     }
 
-    const friendsPct = Math.round(split);
-
-    const hostPct = Math.round(100 - split);
-
-    friendsEl.textContent = friendsPct + "%";
-
-    hostEl.textContent = hostPct + "%";
+    friendsEl.textContent = Math.round(split) + "%";
 
   }
 
@@ -384,21 +374,381 @@
 
 
 
-  function bindContributionField(el) {
+  function parseContributionAmount(str) {
 
-    bindCurrencyField(el);
+    if (str == null || str === "") return null;
+
+    const raw = sanitizeWagerInput(String(str).replace(/[$,\s]/g, ""));
+
+    if (!raw || !/^\d*\.?\d*$/.test(raw)) return null;
+
+    const n = parseFloat(raw);
+
+    return Number.isFinite(n) && n >= 0 ? n : null;
 
   }
 
 
 
-  function formatContributionFields(root) {
+  function formatContributionLive(str) {
 
-    root.querySelectorAll("[data-format-contribution]").forEach((el) => {
+    let s = String(str).replace(/[$,\s]/g, "");
 
-      const n = parseWager(el.value);
+    s = sanitizeWagerInput(s);
 
-      el.value = n != null ? formatWager(n) : "";
+    if (!s) return "";
+
+    const dot = s.indexOf(".");
+
+    let whole = dot === -1 ? s : s.slice(0, dot);
+
+    let frac = dot === -1 ? "" : s.slice(dot + 1);
+
+    if (!whole && dot === -1) return "";
+
+    if (!whole) whole = "0";
+
+    whole = whole.replace(/^0+(?=\d)/, "") || "0";
+
+    const wholeFmt = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+    if (dot === -1) return "$" + wholeFmt;
+
+    return "$" + wholeFmt + "." + frac.slice(0, 2);
+
+  }
+
+
+
+  function formatContributionBlur(el) {
+
+    const digits = String(el.value).replace(/[^\d.]/g, "");
+
+    if (!digits) {
+
+      el.value = "";
+
+      return;
+
+    }
+
+    const n = parseContributionAmount(el.value);
+
+    el.value = n != null ? formatDollars(n) : formatContributionLive(el.value);
+
+  }
+
+
+
+  function bindContributionField(el) {
+
+    if (!el || el._contributionBound) return;
+
+    el._contributionBound = true;
+
+
+
+    const applyLive = () => {
+
+      const formatted = formatContributionLive(el.value);
+
+      if (formatted !== el.value) el.value = formatted;
+
+    };
+
+
+
+    el.addEventListener("input", applyLive);
+
+    el.addEventListener("blur", () => formatContributionBlur(el));
+
+    el.addEventListener("change", () => formatContributionBlur(el));
+
+
+
+    if (el.value) formatContributionBlur(el);
+
+  }
+
+
+
+  function bindContributionFields(root) {
+
+    const scope = root && root.querySelectorAll ? root : document;
+
+    scope.querySelectorAll("[data-format-contribution]").forEach(bindContributionField);
+
+  }
+
+
+
+  function setupContributionFormatting() {
+
+    bindContributionFields(document);
+
+  }
+
+
+
+  const JOIN_DRAFT_PREFIX = "parlaysplit_join_draft:";
+
+  const FOOTER_REV_PREFIX = "parlaysplit_footer_rev:";
+
+
+
+  function joinDraftKey(form) {
+
+    const parlayId = form?.dataset?.parlayId || location.pathname;
+
+    return JOIN_DRAFT_PREFIX + parlayId;
+
+  }
+
+
+
+  function footerRevStorageKey() {
+
+    const form = document.querySelector("[data-join-form]");
+
+    const parlayId = form?.dataset?.parlayId || location.pathname;
+
+    return FOOTER_REV_PREFIX + parlayId;
+
+  }
+
+
+
+  function syncFooterRevisionFromDom() {
+
+    const sync = document.getElementById("ownership-sync");
+
+    const rev = sync?.dataset?.footerRevision;
+
+    if (rev != null) sessionStorage.setItem(footerRevStorageKey(), rev);
+
+  }
+
+
+
+  function readJoinDraft(form) {
+
+    try {
+
+      const raw = sessionStorage.getItem(joinDraftKey(form));
+
+      return raw ? JSON.parse(raw) : null;
+
+    } catch {
+
+      return null;
+
+    }
+
+  }
+
+
+
+  function saveJoinDraft(form) {
+
+    const nickname = form.querySelector('[name="nickname"]')?.value ?? "";
+
+    const contribution = form.querySelector('[name="contribution_amount"]')?.value ?? "";
+
+    if (!nickname && !contribution) {
+
+      sessionStorage.removeItem(joinDraftKey(form));
+
+      setOwnershipPollPaused(false);
+
+      return;
+
+    }
+
+    sessionStorage.setItem(
+
+      joinDraftKey(form),
+
+      JSON.stringify({ nickname, contribution }),
+
+    );
+
+    setOwnershipPollPaused(true);
+
+  }
+
+
+
+  function restoreJoinDraft(form) {
+
+    const draft = readJoinDraft(form);
+
+    if (!draft) return;
+
+    const contrib = form.querySelector("[data-format-contribution]");
+
+    if (form.dataset.joinMode === "top-up") {
+
+      if (contrib && draft.contribution != null) {
+
+        contrib.value = draft.contribution;
+
+        formatContributionBlur(contrib);
+
+      }
+
+      return;
+
+    }
+
+    const nick = form.querySelector('[name="nickname"]');
+
+    if (nick && draft.nickname != null) nick.value = draft.nickname;
+
+    if (contrib && draft.contribution != null) {
+
+      contrib.value = draft.contribution;
+
+      formatContributionBlur(contrib);
+
+    }
+
+  }
+
+
+
+  function clearJoinDraft(form) {
+
+    sessionStorage.removeItem(joinDraftKey(form));
+
+    setOwnershipPollPaused(false);
+
+  }
+
+
+
+  function setOwnershipPollPaused(paused) {
+
+    const sync = document.getElementById("ownership-sync");
+
+    if (!sync) return;
+
+    if (paused) {
+
+      if (!sync.dataset.pollTriggerSaved) {
+
+        sync.dataset.pollTriggerSaved = sync.getAttribute("hx-trigger") || "every 5s";
+
+      }
+
+      sync.removeAttribute("hx-trigger");
+
+    } else if (sync.dataset.pollTriggerSaved) {
+
+      sync.setAttribute("hx-trigger", sync.dataset.pollTriggerSaved);
+
+    }
+
+  }
+
+
+
+  function setupJoinDraftPreservation() {
+
+    if (window._joinDraftBound) return;
+
+    window._joinDraftBound = true;
+
+
+
+    document.addEventListener("input", (e) => {
+
+      const form = e.target.closest("[data-join-form]");
+
+      if (form) saveJoinDraft(form);
+
+    });
+
+
+
+    document.addEventListener("htmx:beforeSwap", () => {
+
+      document.querySelectorAll("[data-join-form]").forEach(saveJoinDraft);
+
+    });
+
+
+
+    document.addEventListener("htmx:afterSwap", (e) => {
+
+      if (e.detail.target?.id === "ownership-sync") maybeRefreshJoinFooter();
+
+      if (e.detail.target?.id === "ownership-footer") {
+
+        document.querySelectorAll("[data-join-form]").forEach((form) => {
+
+          restoreJoinDraft(form);
+
+          initJoinForm(form);
+
+        });
+
+        return;
+
+      }
+
+    });
+
+  }
+
+
+
+  function maybeRefreshJoinFooter() {
+
+    const sync = document.getElementById("ownership-sync");
+
+    if (!sync) return;
+
+    const rev = sync.dataset.footerRevision;
+
+    if (rev == null) return;
+
+    const storageKey = footerRevStorageKey();
+
+    const prev = sessionStorage.getItem(storageKey);
+
+    if (rev === prev) return;
+
+    const form = document.querySelector("[data-join-form]");
+
+    const draft = form && readJoinDraft(form);
+
+    const wasJoin = form?.dataset.joinMode === "join";
+
+    const parts = rev.split("|");
+
+    const approvedNow = parts[0] === "1" && parts[2] !== "";
+
+    if (draft && wasJoin && approvedNow) clearJoinDraft(form);
+
+    sessionStorage.setItem(storageKey, rev);
+
+    const url = sync.dataset.joinFooterUrl;
+
+    if (!url || typeof htmx === "undefined") return;
+
+    const keepDraft = draft && wasJoin && !approvedNow;
+
+
+
+    htmx.ajax("GET", url, { target: "#ownership-footer", swap: "outerHTML" }).then(() => {
+
+      document.querySelectorAll("[data-join-form]").forEach((f) => {
+
+        if (keepDraft) restoreJoinDraft(f);
+
+        else initJoinForm(f);
+
+      });
 
     });
 
@@ -410,15 +760,17 @@
 
     if (!root) return;
 
-    formatContributionFields(root);
-
-    root.querySelectorAll("[data-format-contribution]").forEach(bindContributionField);
-
-
-
     const form = root.matches("[data-join-form]") ? root : root.querySelector("[data-join-form]");
 
-    if (!form || form._joinSubmitBound) return;
+    if (!form) return;
+
+    restoreJoinDraft(form);
+
+    bindContributionFields(form);
+
+
+
+    if (form._joinSubmitBound) return;
 
     form._joinSubmitBound = true;
 
@@ -426,13 +778,15 @@
 
     form.addEventListener("submit", () => {
 
+      clearJoinDraft(form);
+
       const el = form.querySelector("[data-format-contribution]");
 
       if (!el) return;
 
-      const n = parseWager(el.value);
+      const n = parseContributionAmount(el.value);
 
-      el.value = n != null ? n.toFixed(2) : "";
+      el.value = n != null && n > 0 ? n.toFixed(2) : "";
 
     });
 
@@ -502,9 +856,9 @@
 
   function setupSplitSliderDelegation() {
 
-    if (document.body._splitSliderDelegation) return;
+    if (window._splitSliderDelegation) return;
 
-    document.body._splitSliderDelegation = true;
+    window._splitSliderDelegation = true;
 
 
 
@@ -898,13 +1252,29 @@
 
 
 
-  function initAll() {
+  function initAll(evt) {
 
     setupSplitSliderDelegation();
 
+    setupContributionFormatting();
+
+    setupJoinDraftPreservation();
+
+    syncFooterRevisionFromDom();
+
     document.querySelectorAll("[data-parlay-form]").forEach(initParlayForm);
 
-    document.querySelectorAll("[data-join-form]").forEach(initJoinForm);
+    const swapRoot = evt?.detail?.target || document;
+
+    swapRoot.querySelectorAll("[data-join-form]").forEach(initJoinForm);
+
+    bindContributionFields(document);
+
+    document.querySelectorAll("[data-join-form]").forEach((form) => {
+
+      if (readJoinDraft(form)) setOwnershipPollPaused(true);
+
+    });
 
   }
 
@@ -914,15 +1284,13 @@
 
 
 
-  setupSplitSliderDelegation();
+  function bootstrapParlayForm() {
 
+    setupSplitSliderDelegation();
 
+    setupContributionFormatting();
 
-  if (document.readyState === "loading") {
-
-    document.addEventListener("DOMContentLoaded", initAll);
-
-  } else {
+    setupJoinDraftPreservation();
 
     initAll();
 
@@ -930,7 +1298,19 @@
 
 
 
-  document.body.addEventListener("htmx:afterSwap", initAll);
+  if (document.readyState === "loading") {
+
+    document.addEventListener("DOMContentLoaded", bootstrapParlayForm);
+
+  } else {
+
+    bootstrapParlayForm();
+
+  }
+
+
+
+  document.addEventListener("htmx:afterSwap", initAll);
 
 })();
 

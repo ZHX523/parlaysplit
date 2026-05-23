@@ -1,9 +1,1 @@
-{# Poll when the join form is hidden, or for hosts while requests are pending. #}
-<div id="ownership-panel"
-     {% if parlay.status != "open" or not show_join_form or is_creator and has_pending_participants %}
-     hx-get="{{ ownership_poll_url }}"
-     hx-trigger="every 5s"
-     hx-swap="innerHTML"
-     {% endif %}>
-  {% include "parlays/partials/parlay_ownership_inner.html" %}
-</div>
+{% include "parlays/partials/parlay_ownership_inner.html" %}

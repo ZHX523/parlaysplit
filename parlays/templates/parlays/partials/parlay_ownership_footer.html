@@ -1,0 +1,47 @@
+{% load parlay_extras %}
+{% if show_join_form %}
+<form method="post"
+      data-join-form
+      data-parlay-id="{{ parlay.id }}"
+      data-join-mode="{% if join_form_is_top_up %}top-up{% else %}join{% endif %}"
+      hx-post="{{ page_url }}"
+      hx-target="#ownership-panel"
+      hx-swap="innerHTML"
+      hx-boost="false"
+      class="space-y-3 mt-3">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="join">
+  {% if join_form_is_top_up %}
+  <input type="hidden" name="nickname" value="{{ user_approved_participant.nickname }}">
+  <p class="text-sm text-slate-400">
+    Participating as <span class="text-slate-200 font-medium">{{ user_approved_participant.nickname }}</span>
+  </p>
+  {% else %}
+  <div>
+    <label class="label-normal" for="{{ join_form.nickname.id_for_label }}">NAME</label>
+    {{ join_form.nickname }}
+    {% if join_form.nickname.errors %}<p class="text-red-400 text-sm mt-1">{{ join_form.nickname.errors.0 }}</p>{% endif %}
+  </div>
+  {% endif %}
+  <div>
+    <label class="label" for="{{ join_form.contribution_amount.id_for_label }}">Contribution ($)</label>
+    <input type="text"
+           name="contribution_amount"
+           id="{{ join_form.contribution_amount.id_for_label }}"
+           class="input-field"
+           placeholder="{% if join_form_is_top_up %}More than {{ user_approved_participant.contribution_amount|currency }}{% else %}$25.00{% endif %}"
+           inputmode="decimal"
+           autocomplete="off"
+           data-format-contribution
+           value="{{ join_form.contribution_amount.value|default_if_none:'' }}">
+    {% if join_form.contribution_amount.errors %}<p class="text-red-400 text-sm mt-1">{{ join_form.contribution_amount.errors.0 }}</p>{% endif %}
+  </div>
+  {% if join_form.non_field_errors %}
+  <p class="text-red-400 text-sm">{{ join_form.non_field_errors.0 }}</p>
+  {% endif %}
+  <button type="submit" class="btn-primary w-full py-3">
+    {% if join_form_is_top_up %}Request Higher Contribution{% else %}Request to Join{% endif %}
+  </button>
+</form>
+{% endif %}
+

@@ -88,6 +88,19 @@ def legs_initial_from_text(text: str) -> list[dict]:
 
 class ParlayCreateForm(forms.ModelForm):
 
+    host_name = forms.CharField(
+        required=False,
+        max_length=64,
+        widget=forms.TextInput(
+            attrs={
+                "class": "input-field",
+                "placeholder": "Jordan",
+                "autocomplete": "name",
+                "maxlength": "64",
+            },
+        ),
+    )
+
     class Meta:
 
         model = Parlay
@@ -175,6 +188,20 @@ class ParlayCreateForm(forms.ModelForm):
         else:
 
             self.legs_initial = legs_initial or default_legs_initial()
+
+    def clean_host_name(self):
+
+        value = (self.cleaned_data.get("host_name") or "").strip()
+
+        if not value:
+
+            return DEFAULT_CREATOR_NICKNAME
+
+        if len(value) > 64:
+
+            raise ValidationError("Name is too long.")
+
+        return value
 
 
 
@@ -293,8 +320,7 @@ class ParlayCreateForm(forms.ModelForm):
     def save(self, commit=True):
         parlay = super().save(commit=False)
         parlay.potential_payout = self.cleaned_data["potential_payout"]
-        if not parlay.creator_nickname:
-            parlay.creator_nickname = DEFAULT_CREATOR_NICKNAME
+        parlay.creator_nickname = self.cleaned_data["host_name"]
         if self.external_link:
             parlay.external_link = self.external_link
         if commit:
@@ -345,6 +371,16 @@ class ParlayEditForm(ParlayCreateForm):
         super().__init__(*args, **kwargs)
 
         if self.instance and self.instance.pk:
+
+            if not self.is_bound:
+
+                nick = self.instance.creator_nickname
+
+                self.initial["host_name"] = (
+
+                    nick if nick and nick != DEFAULT_CREATOR_NICKNAME else ""
+
+                )
 
             legs = self.instance.legs.order_by("sort_order")
 
@@ -430,9 +466,37 @@ class ParticipantJoinForm(forms.ModelForm):
 
             )
 
+        if not self.is_bound and parlay and session_key:
+
+            approved = parlay.participants.filter(
+
+                session_key=session_key,
+
+                status=ParticipantStatus.APPROVED,
+
+            ).first()
+
+            if approved:
+
+                self.initial.setdefault("nickname", approved.nickname)
+
 
 
     def save(self, commit=True):
+
+        top_up = getattr(self, "_top_up_participant", None)
+
+        if top_up:
+
+            top_up.contribution_amount = self.cleaned_data["contribution_amount"]
+
+            top_up.status = ParticipantStatus.PENDING
+
+            if commit:
+
+                top_up.save(update_fields=["contribution_amount", "status"])
+
+            return top_up
 
         participant = super().save(commit=False)
 
@@ -474,11 +538,27 @@ class ParticipantJoinForm(forms.ModelForm):
 
                 )
 
-            if self.parlay.participants.filter(nickname__iexact=nickname).exists():
+            session_key = getattr(self, "_session_key", None)
+
+            existing = self.parlay.participants.filter(nickname__iexact=nickname).first()
+
+            if existing:
+
+                if (
+
+                    session_key
+
+                    and existing.session_key == session_key
+
+                    and existing.status == ParticipantStatus.APPROVED
+
+                ):
+
+                    self._top_up_participant = existing
+
+                    return nickname
 
                 raise ValidationError("That name is already on this parlay.")
-
-            session_key = getattr(self, "_session_key", None)
 
             if session_key and self.parlay.participants.filter(
 
@@ -542,7 +622,29 @@ class ParticipantJoinForm(forms.ModelForm):
 
             remaining = self.parlay.remaining_for_friends
 
-            if amount > remaining:
+            top_up = getattr(self, "_top_up_participant", None)
+
+            if top_up:
+
+                max_total = top_up.contribution_amount + remaining
+
+                if amount > max_total:
+
+                    raise ValidationError(
+
+                        f"Only {format_dollars(remaining)} more is available on the friends split."
+
+                    )
+
+                if amount <= top_up.contribution_amount:
+
+                    raise ValidationError(
+
+                        f"Enter more than your current {format_dollars(top_up.contribution_amount)} contribution."
+
+                    )
+
+            elif amount > remaining:
 
                 raise ValidationError(
 

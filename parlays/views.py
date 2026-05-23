@@ -356,9 +356,6 @@ def create_parlay(request):
 
 
 
-    if not method:
-        method = SUBMISSION_MANUAL
-
     meta = Meta(
 
         request=request,
@@ -461,7 +458,7 @@ def _render_parlay_page(request, parlay, *, is_host_view: bool):
 
                         request,
 
-                        "parlays/partials/parlay_ownership_inner.html",
+                        "parlays/partials/parlay_ownership_body.html",
 
                         _parlay_context(
 
@@ -489,13 +486,15 @@ def _render_parlay_page(request, parlay, *, is_host_view: bool):
 
                 if join_ok:
 
+                    if not request.session.session_key:
+
+                        request.session.create()
+
                     participant = join_form.save()
 
-                    if request.session.session_key:
+                    participant.session_key = request.session.session_key or ""
 
-                        participant.session_key = request.session.session_key
-
-                        participant.save(update_fields=["session_key"])
+                    participant.save(update_fields=["session_key"])
 
                     parlay = get_object_or_404(
 
@@ -513,7 +512,7 @@ def _render_parlay_page(request, parlay, *, is_host_view: bool):
 
                         request,
 
-                        "parlays/partials/parlay_ownership_inner.html",
+                        "parlays/partials/parlay_ownership_body.html",
 
                         _parlay_context(
 
@@ -565,7 +564,7 @@ def _render_parlay_page(request, parlay, *, is_host_view: bool):
 
                     request,
 
-                    "parlays/partials/parlay_ownership_inner.html",
+                    "parlays/partials/parlay_ownership_body.html",
 
                     _parlay_context(
 
@@ -629,13 +628,41 @@ def _render_parlay_page(request, parlay, *, is_host_view: bool):
 
 
 
+    if request.GET.get("partial") == "live":
+
+        return render(
+
+            request,
+
+            "parlays/partials/parlay_live_details.html",
+
+            {"parlay": parlay},
+
+        )
+
+
+
     if request.GET.get("partial") == "ownership":
 
         return render(
 
             request,
 
-            "parlays/partials/parlay_ownership_inner.html",
+            "parlays/partials/parlay_ownership_poll.html",
+
+            _parlay_context(request, parlay, join_form, is_host_view=is_host_view),
+
+        )
+
+
+
+    if request.GET.get("partial") == "join-footer":
+
+        return render(
+
+            request,
+
+            "parlays/partials/parlay_join_footer_partial.html",
 
             _parlay_context(request, parlay, join_form, is_host_view=is_host_view),
 
@@ -775,6 +802,22 @@ def _handle_participant_action(request, parlay, action: str) -> str | None:
 
 
 
+def _join_footer_revision(
+    *,
+    show_join_form: bool,
+    user_pending_request,
+    user_approved_participant,
+) -> str:
+    approved = user_approved_participant
+    return "|".join(
+        [
+            "1" if show_join_form else "0",
+            str(user_pending_request.pk) if user_pending_request else "",
+            str(approved.pk) if approved else "",
+        ],
+    )
+
+
 def _parlay_context(
     request,
     parlay,
@@ -897,6 +940,22 @@ def _parlay_context(
 
     )
 
+    user_approved_participant = (
+
+        parlay.participants.filter(
+
+            session_key=session_key,
+
+            status=ParticipantStatus.APPROVED,
+
+        ).first()
+
+        if session_key
+
+        else None
+
+    )
+
     has_pending_participants = bool(pending)
 
     show_join_form = (
@@ -909,6 +968,14 @@ def _parlay_context(
 
         and user_pending_request is None
 
+    )
+
+    join_form_is_top_up = bool(user_approved_participant and show_join_form)
+
+    footer_revision = _join_footer_revision(
+        show_join_form=show_join_form,
+        user_pending_request=user_pending_request,
+        user_approved_participant=user_approved_participant,
     )
 
     return {
@@ -935,6 +1002,8 @@ def _parlay_context(
 
         "ownership_poll_url": f"{page_url}?partial=ownership",
 
+        "parlay_live_poll_url": f"{page_url}?partial=live" if not is_host_view else None,
+
         "is_creator": is_creator,
 
         "is_host_view": is_host_view,
@@ -943,7 +1012,19 @@ def _parlay_context(
 
         "user_pending_request": user_pending_request,
 
+        "user_approved_participant": user_approved_participant,
+
         "show_join_form": show_join_form,
+
+        "join_form_is_top_up": join_form_is_top_up,
+
+        "footer_revision": footer_revision,
+
+        "join_footer_url": f"{page_url}?partial=join-footer",
+
+        "should_poll_ownership": (not is_host_view) or (
+            is_host_view and parlay.status == ParlayStatus.OPEN
+        ),
 
         "ownership_action_error": ownership_action_error,
 

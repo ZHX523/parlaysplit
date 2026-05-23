@@ -1,0 +1,29 @@
+{% load parlay_extras %}
+<header>
+  <h1 class="text-2xl font-bold mt-1">{{ parlay.creator_nickname }}'s Parlay</h1>
+  <div class="flex flex-wrap gap-3 mt-3 text-sm">
+    {% if parlay.odds_american %}
+    <span class="badge">Odds {% if parlay.odds_american > 0 %}+{% endif %}{{ parlay.odds_american }}</span>
+    {% endif %}
+    <span class="badge">Wager {{ parlay.wager_amount|currency }}</span>
+    {% if parlay.split_offered_percent < 100 %}
+    <span class="badge">Split Offered {{ parlay.split_offered_percent|whole_percent }}%</span>
+    {% endif %}
+  </div>
+</header>
+
+{% include "parlays/partials/parlay_payout_box.html" with payout_amount=parlay.potential_payout %}
+
+{% if parlay.legs.exists %}
+<section class="card">
+  <h2 class="font-semibold text-sm text-slate-300 mb-3">Legs ({{ parlay.legs.count }})</h2>
+  <ol class="parlay-legs-list">
+    {% for leg in parlay.legs.all %}
+    <li>
+      <span class="parlay-leg-type">{{ leg.get_leg_type_display }} ·</span>
+      {{ leg.description }}
+    </li>
+    {% endfor %}
+  </ol>
+</section>
+{% endif %}

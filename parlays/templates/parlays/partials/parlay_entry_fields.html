@@ -5,6 +5,21 @@
      data-max-legs="{{ max_legs }}"
      data-leg-type-hints="{% leg_type_hints_attr %}">
 
+  {% if form.host_name %}
+  <div>
+    <label class="label-normal" for="{{ form.host_name.id_for_label }}">NAME (OPTIONAL)</label>
+    <input type="text"
+           name="host_name"
+           id="{{ form.host_name.id_for_label }}"
+           class="input-field"
+           placeholder="Jordan"
+           autocomplete="off"
+           maxlength="64"
+           value="{{ form.host_name.value|default_if_none:'' }}">
+    {% if form.host_name.errors %}<p class="text-red-400 text-sm mt-1">{{ form.host_name.errors.0 }}</p>{% endif %}
+  </div>
+  {% endif %}
+
   <div class="form-grid-2">
     <div>
       <label class="label" for="{{ form.odds_american.id_for_label }}">Odds (American)</label>
@@ -37,7 +52,7 @@
   {% include "parlays/partials/parlay_payout_box.html" with live=True payout_amount=form.instance.potential_payout %}
 
   <div>
-    <label class="label" for="{{ form.split_offered_percent.id_for_label }}">Split offered (%)</label>
+    <label class="label" for="{{ form.split_offered_percent.id_for_label }}">Split offered (%) — Decide how much of this parlay friends can join.</label>
     <input type="text"
            name="split_offered_percent"
            id="{{ form.split_offered_percent.id_for_label }}"
@@ -60,10 +75,9 @@
       <span class="text-xs text-slate-500 shrink-0">100%</span>
     </div>
     <p class="text-[15px] text-slate-400 leading-relaxed mt-2" data-split-hint>
-      Max friends can claim
+      Friends can participate up to
       <span class="font-bold text-red-400" data-split-friends-pct>—</span>
-      of the wager; you keep at least
-      <span class="font-bold text-emerald-400" data-split-host-pct>—</span>.
+      of this parlay
     </p>
     {% if form.split_offered_percent.errors %}<p class="text-red-400 text-sm mt-1">{{ form.split_offered_percent.errors.0 }}</p>{% endif %}
   </div>

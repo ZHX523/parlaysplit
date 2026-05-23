@@ -69,7 +69,7 @@ class Parlay(models.Model):
         help_text="5-digit code for the host to find and manage this parlay.",
     )
 
-    creator_nickname = models.CharField(max_length=64, default="Host")
+    creator_nickname = models.CharField(max_length=64, default="HOST")
 
     odds_american = models.IntegerField(
 

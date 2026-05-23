@@ -148,6 +148,7 @@ button.btn-check-parlay,a.btn-check-parlay{-webkit-appearance:none;appearance:no
 .text-sky-400{color:#38bdf8}
 .card{border-radius:1rem;border:1px solid #1e293b;background-color:rgba(15,23,42,.8);padding:1rem}
 .label{display:block;font-size:.75rem;font-weight:500;color:#94a3b8;margin-bottom:.25rem;text-transform:uppercase;letter-spacing:.025em}
+.label-hint{font-weight:400;color:#64748b;text-transform:none;letter-spacing:normal}
 .label-normal{display:block;font-size:.75rem;font-weight:500;color:#94a3b8;margin-bottom:.25rem}
 .input-field{width:100%;border-radius:.75rem;border:1px solid #334155;background-color:#1e293b;padding:.75rem 1rem;min-height:44px;color:#f1f5f9}
 .input-field:focus{border-color:#10b981;box-shadow:0 0 0 1px #10b981;outline:none}
@@ -249,7 +250,7 @@ button.btn-check-parlay,a.btn-check-parlay{-webkit-appearance:none;appearance:no
 .app-main{flex:1 1 0%;padding-top:1.5rem;padding-bottom:6rem;margin-left:auto;margin-right:auto;width:100%;max-width:32rem;padding-left:1rem;padding-right:1rem}
 .app-footer-inner{margin-left:auto;margin-right:auto;width:100%;max-width:32rem;padding-left:1rem;padding-right:1rem;padding-top:1rem;padding-bottom:1rem;font-size:.75rem;line-height:1rem;color:#64748b}
 .app-footer-inner>:not([hidden])~:not([hidden]){margin-top:.5rem}
-.site-logo{font-weight:700;font-size:1rem;line-height:1.5rem;letter-spacing:-.025em;color:#34d399;flex-shrink:0}
+.site-logo{font-weight:700;font-size:1.25rem;line-height:1.75rem;letter-spacing:-.025em;color:#34d399;flex-shrink:0}
 .ownership-participant-row{display:flex;flex-direction:column;gap:.75rem;padding-top:.75rem;padding-bottom:.75rem;border-bottom:1px solid #1e293b}
 .ownership-participant-row:last-child{border-bottom-width:0}
 .ownership-participant-meta{display:flex;flex-direction:column;gap:.5rem;width:100%;font-size:.875rem;line-height:1.25rem}
@@ -258,7 +259,21 @@ button.btn-check-parlay,a.btn-check-parlay{-webkit-appearance:none;appearance:no
 .host-action-form{min-width:0}
 .share-link-row{display:flex;flex-direction:column;gap:.5rem}
 .share-link-row .btn-primary{width:100%}
-.feature-grid{display:grid;gap:1rem}
+.feature-grid{display:grid;align-items:stretch;gap:1rem}
+.feature-card{display:flex;height:100%;flex-direction:column}
+.feature-card-heading{margin-bottom:0;display:flex;align-items:flex-start;gap:.75rem}
+.feature-card-icon{display:flex;height:2.25rem;width:2.25rem;flex-shrink:0;align-items:center;justify-content:center;font-size:1.5rem;line-height:1}
+.feature-card-heading h2{min-height:2.75rem;min-width:0;flex:1 1 0%;font-size:1rem;font-weight:600;line-height:1.375;color:#f1f5f9}
+.feature-card-body{min-height:4.875rem;flex:1 1 0%;font-size:.875rem;line-height:1.625;color:#94a3b8}
+.landing-demo{margin-top:3rem;padding-bottom:1rem}
+.landing-demo-intro{text-align:center;margin-bottom:1.25rem}
+.landing-demo-intro>:not([hidden])~:not([hidden]){margin-top:.25rem}
+.landing-demo-label{font-size:1rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:#34d399}
+@media (min-width:640px){.landing-demo-label{font-size:1.125rem;line-height:1.75rem}}
+.landing-demo-frame{border-radius:1rem;border:1px solid rgba(51,65,85,.8);background-color:rgba(15,23,42,.4);padding:1rem;box-shadow:inset 0 1px 0 rgba(148,163,184,.06)}
+@media (min-width:640px){.landing-demo-frame{padding:1.25rem}}
+.landing-demo-content{pointer-events:none;user-select:none;opacity:.97}
+.landing-demo-content [disabled],.landing-demo-content input[readonly]{opacity:.8}
 .form-grid-2{display:grid;grid-template-columns:1fr;gap:.75rem}
 .host-code-display{font-size:1.5rem;line-height:2rem;font-weight:800;color:#34d399;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;letter-spacing:.25em;word-break:break-all}
 .mt-auto{margin-top:auto}
@@ -274,7 +289,7 @@ button.btn-check-parlay,a.btn-check-parlay{-webkit-appearance:none;appearance:no
 @media (min-width:640px){
   .sm\:text-4xl{font-size:2.25rem;line-height:2.5rem}
   .app-header-inner{gap:.75rem}
-  .site-logo{font-size:1.125rem;line-height:1.75rem}
+  .site-logo{font-size:1.5rem;line-height:2rem}
   .btn-nav-group{gap:.5rem;width:12.75rem}
   .app-main{padding-bottom:2rem}
   .ownership-participant-row{flex-direction:row;align-items:flex-start;justify-content:space-between;gap:1rem}

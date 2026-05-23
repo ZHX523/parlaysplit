@@ -25,20 +25,28 @@
 </section>
 
 <section class="mt-12 feature-grid">
-  <div class="card">
-    <div class="text-emerald-400 text-2xl mb-2">📸</div>
-    <h2 class="font-semibold mb-1">OCR slip import</h2>
-    <p class="text-sm text-slate-400">Screenshot upload auto-fills odds, wager, and legs.</p>
-  </div>
-  <div class="card">
-    <div class="text-emerald-400 text-2xl mb-2">🔗</div>
-    <h2 class="font-semibold mb-1">Shareable link</h2>
-    <p class="text-sm text-slate-400">Friends claim part of the wager by name — host keeps the rest.</p>
-  </div>
-  <div class="card">
-    <div class="text-emerald-400 text-2xl mb-2">📊</div>
-    <h2 class="font-semibold mb-1">Estimated splits</h2>
-    <p class="text-sm text-slate-400">Ownership % and payout estimates for planning — not guaranteed.</p>
-  </div>
+  <article class="card feature-card">
+    <div class="feature-card-heading">
+      <span class="feature-card-icon" aria-hidden="true">🔗</span>
+      <h2>Share Your Parlay With Friends</h2>
+    </div>
+    <p class="feature-card-body">Enter your sportsbook parlay manually, upload a screenshot, or paste a betting slip link.</p>
+  </article>
+  <article class="card feature-card">
+    <div class="feature-card-heading">
+      <span class="feature-card-icon" aria-hidden="true">👥</span>
+      <h2>Track Group Participation</h2>
+    </div>
+    <p class="feature-card-body">Friends can tail your parlay, contribute amounts, and view estimated payout shares in real time.</p>
+  </article>
+  <article class="card feature-card">
+    <div class="feature-card-heading">
+      <span class="feature-card-icon" aria-hidden="true">🛡️</span>
+      <h2>Host the Parlay on Your Terms</h2>
+    </div>
+    <p class="feature-card-body">Approve participation requests, open or close your parlay anytime, and control edits before lock-in.</p>
+  </article>
 </section>
+
+{% include "parlays/partials/landing_public_demo.html" %}
 {% endblock %}

@@ -5,7 +5,7 @@ from django.conf import settings
 
 from .models import Parlay
 
-DEFAULT_CREATOR_NICKNAME = "Host"
+DEFAULT_CREATOR_NICKNAME = "HOST"
 
 
 def generate_host_code() -> str:
