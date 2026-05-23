@@ -20,11 +20,29 @@
 
 
 
-{% if is_creator and edit_form %}
+{% if is_creator %}
 
 <section class="card mt-6"
 
-         x-data="{ editOpen: {% if edit_form.errors %}true{% else %}false{% endif %} }">
+         {% if edit_form %}x-data="{ editOpen: {% if edit_form.errors %}true{% else %}false{% endif %} }"{% endif %}>
+
+  {% if parlay_edits_locked %}
+
+  <div class="flex flex-wrap items-center gap-2 mb-2">
+
+    <h2 class="font-semibold text-sm text-slate-300">Edit parlay</h2>
+
+    <span class="status-badge status-closed">Locked</span>
+
+  </div>
+
+  <p class="text-sm text-amber-300">
+
+    A friend has joined this parlay. Odds, wager, legs, and split offered can no longer be changed.
+
+  </p>
+
+  {% elif edit_form %}
 
   <button type="button"
 
@@ -85,6 +103,8 @@
     </form>
 
   </div>
+
+  {% endif %}
 
 </section>
 

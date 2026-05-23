@@ -227,6 +227,14 @@ class Parlay(models.Model):
 
         return self.participants.filter(status=ParticipantStatus.APPROVED).count()
 
+    @property
+
+    def friends_have_joined(self) -> bool:
+
+        """True when at least one friend is approved on the parlay."""
+
+        return self.participants.filter(status=ParticipantStatus.APPROVED).exists()
+
 
 
     @property

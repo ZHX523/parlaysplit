@@ -113,6 +113,27 @@
   .host-action-remove {
     @apply bg-red-500/12 text-red-300 border-red-500/35;
   }
+  .join-status-toggle {
+    @apply inline-flex shrink-0 rounded-lg border border-slate-700 bg-slate-800/80 p-0.5;
+  }
+  .join-status-toggle-btn {
+    @apply flex-1 basis-0 min-w-[4.25rem] rounded-md px-2 py-1 text-xs font-semibold uppercase tracking-wide text-center border border-transparent cursor-pointer transition-colors text-slate-400 bg-transparent;
+  }
+  .join-status-toggle-btn-open.is-active {
+    @apply bg-emerald-500/15 text-emerald-300 border-emerald-500/40 cursor-default;
+  }
+  .join-status-toggle-btn-closed.is-active {
+    @apply bg-red-500/12 text-red-300 border-red-500/35 cursor-default;
+  }
+  .join-status-toggle-btn.is-active:disabled {
+    @apply opacity-100;
+  }
+  .join-status-toggle-btn-open:not(.is-active):not(:disabled):hover {
+    @apply text-emerald-300 bg-emerald-500/10 border-emerald-500/25;
+  }
+  .join-status-toggle-btn-closed:not(.is-active):not(:disabled):hover {
+    @apply text-red-300 bg-red-500/10 border-red-500/25;
+  }
   .card {
     @apply rounded-2xl border border-slate-800 bg-slate-900/80 p-4;
   }
@@ -245,7 +266,7 @@
     @apply bg-emerald-500/15 text-emerald-300 border border-emerald-500/40;
   }
   .status-closed {
-    @apply bg-slate-800 text-slate-400 border border-slate-600;
+    @apply bg-red-500/12 text-red-300 border border-red-500/35;
   }
   .status-pending {
     @apply bg-amber-500/15 text-amber-300 border border-amber-500/40;

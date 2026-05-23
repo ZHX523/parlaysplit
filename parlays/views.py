@@ -7,6 +7,7 @@ from django.conf import settings
 from django.http import Http404, HttpResponse
 
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
 from django.views.decorators.http import require_GET, require_http_methods
 
@@ -60,9 +61,17 @@ SUBMISSION_LINK = "link"
 
 
 def _redirect_after_parlay_create(request, parlay):
+    if not parlay.host_code:
+        parlay.save()
     request.session[f"creator_{parlay.id}"] = True
     request.session[f"show_share_intro_{parlay.id}"] = True
-    return redirect("parlays:detail", pk=parlay.id)
+    return redirect("parlays:host", host_code=parlay.host_code)
+
+
+def _parlay_page_url(parlay, *, is_host_view: bool) -> str:
+    if is_host_view:
+        return reverse("parlays:host", kwargs={"host_code": parlay.host_code})
+    return reverse("parlays:detail", kwargs={"pk": parlay.pk})
 
 
 def landing(request):
@@ -416,31 +425,15 @@ def ocr_status_partial(request, upload_id):
 
 
 
-@require_http_methods(["GET", "POST"])
-
-def parlay_detail(request, pk):
-
-    parlay = get_object_or_404(
-
-        Parlay.objects.prefetch_related("legs", "participants"),
-
-        pk=pk,
-
-    )
-
-    if not parlay.is_public:
-
-        raise Http404()
-
-
+def _render_parlay_page(request, parlay, *, is_host_view: bool):
 
     join_form = _join_form_for(request, parlay)
 
     edit_form = None
 
-    is_creator = request.session.get(f"creator_{parlay.id}") is True
-
     ownership_action_error = None
+
+    page_url = _parlay_page_url(parlay, is_host_view=is_host_view)
 
 
 
@@ -452,9 +445,13 @@ def parlay_detail(request, pk):
 
         if action == "join":
 
-            if is_creator:
+            if is_host_view:
 
-                ownership_action_error = "Use your public share link for friends to join — you manage requests here."
+                ownership_action_error = (
+
+                    "Friends join on your public link — this page is for managing requests."
+
+                )
 
                 join_form = _join_form_for(request, parlay)
 
@@ -474,69 +471,73 @@ def parlay_detail(request, pk):
 
                             join_form,
 
+                            is_host_view=True,
+
                             ownership_action_error=ownership_action_error,
 
                         ),
 
                     )
 
-                return redirect("parlays:detail", pk=parlay.id)
+                return redirect(page_url)
 
+            else:
 
+                join_form = _join_form_for(request, parlay, data=request.POST)
 
-            join_form = _join_form_for(request, parlay, data=request.POST)
+                join_ok = join_form.is_valid()
 
-            join_ok = join_form.is_valid()
+                if join_ok:
 
-            if join_ok:
+                    participant = join_form.save()
 
-                participant = join_form.save()
+                    if request.session.session_key:
 
-                if request.session.session_key:
+                        participant.session_key = request.session.session_key
 
-                    participant.session_key = request.session.session_key
+                        participant.save(update_fields=["session_key"])
 
-                    participant.save(update_fields=["session_key"])
+                    parlay = get_object_or_404(
 
-                parlay = get_object_or_404(
+                        Parlay.objects.prefetch_related("legs", "participants"),
 
-                    Parlay.objects.prefetch_related("legs", "participants"),
+                        pk=parlay.pk,
 
-                    pk=pk,
+                    )
 
-                )
+                    join_form = _join_form_for(request, parlay)
 
-                join_form = _join_form_for(request, parlay)
+                if request.headers.get("HX-Request"):
 
-            if request.headers.get("HX-Request"):
-
-                return render(
-
-                    request,
-
-                    "parlays/partials/parlay_ownership_inner.html",
-
-                    _parlay_context(
+                    return render(
 
                         request,
 
-                        parlay,
+                        "parlays/partials/parlay_ownership_inner.html",
 
-                        join_form,
+                        _parlay_context(
 
-                        ownership_action_error=ownership_action_error,
+                            request,
 
-                    ),
+                            parlay,
 
-                )
+                            join_form,
 
-            if join_ok:
+                            is_host_view=is_host_view,
 
-                return redirect("parlays:detail", pk=parlay.id)
+                            ownership_action_error=ownership_action_error,
+
+                        ),
+
+                    )
+
+                if join_ok:
+
+                    return redirect(page_url)
 
 
 
-        if is_creator and action in ("approve_participant", "remove_participant"):
+        if is_host_view and action in ("approve_participant", "remove_participant"):
 
             ownership_action_error = _handle_participant_action(
 
@@ -552,7 +553,7 @@ def parlay_detail(request, pk):
 
                 Parlay.objects.prefetch_related("legs", "participants"),
 
-                pk=pk,
+                pk=parlay.pk,
 
             )
 
@@ -574,17 +575,47 @@ def parlay_detail(request, pk):
 
                         join_form,
 
+                        is_host_view=True,
+
                         ownership_action_error=ownership_action_error,
 
                     ),
 
                 )
 
-            return redirect("parlays:detail", pk=parlay.id)
+            return redirect(page_url)
 
 
 
-        if action == "edit" and is_creator:
+        if is_host_view and action == "close_parlay":
+
+            if parlay.status == ParlayStatus.OPEN:
+
+                parlay.status = ParlayStatus.LOCKED
+
+                parlay.save(update_fields=["status", "updated_at"])
+
+            return redirect(page_url)
+
+
+
+        if is_host_view and action == "open_parlay":
+
+            if parlay.status == ParlayStatus.LOCKED:
+
+                parlay.status = ParlayStatus.OPEN
+
+                parlay.save(update_fields=["status", "updated_at"])
+
+            return redirect(page_url)
+
+
+
+        if is_host_view and action == "edit":
+
+            if parlay.friends_have_joined:
+
+                return redirect(page_url)
 
             edit_form = ParlayEditForm(request.POST, instance=parlay)
 
@@ -594,7 +625,7 @@ def parlay_detail(request, pk):
 
                 edit_form.save_legs(parlay)
 
-                return redirect("parlays:detail", pk=parlay.id)
+                return redirect(page_url)
 
 
 
@@ -606,7 +637,7 @@ def parlay_detail(request, pk):
 
             "parlays/partials/parlay_ownership_inner.html",
 
-            _parlay_context(request, parlay, join_form),
+            _parlay_context(request, parlay, join_form, is_host_view=is_host_view),
 
         )
 
@@ -626,28 +657,67 @@ def parlay_detail(request, pk):
 
 
 
-    ctx = _parlay_context(request, parlay, join_form)
+    ctx = _parlay_context(request, parlay, join_form, is_host_view=is_host_view)
 
     ctx["meta"] = meta
 
-    ctx["edit_form"] = edit_form or ParlayEditForm(instance=parlay) if is_creator else None
+    ctx["page_url"] = page_url
 
-    ctx["is_creator"] = is_creator
+    parlay_edits_locked = is_host_view and parlay.friends_have_joined
 
-    ctx["show_share_intro"] = is_creator and request.session.pop(
-        f"show_share_intro_{parlay.id}",
-        False,
+    ctx["edit_form"] = (
+
+        edit_form or ParlayEditForm(instance=parlay)
+
+        if is_host_view and not parlay_edits_locked
+
+        else None
+
     )
 
-    ctx["host_url"] = parlay.host_url if is_creator else None
+    ctx["parlay_edits_locked"] = parlay_edits_locked
 
-    ctx["host_code"] = parlay.host_code if is_creator else None
+    ctx["is_creator"] = is_host_view
+
+    ctx["show_share_intro"] = is_host_view and request.session.pop(
+
+        f"show_share_intro_{parlay.id}",
+
+        False,
+
+    )
+
+    ctx["host_url"] = parlay.host_url if is_host_view else None
+
+    ctx["host_code"] = parlay.host_code if is_host_view else None
 
     ctx["leg_type_choices"] = LegType.choices
 
     ctx["max_legs"] = settings.MAX_LEGS
 
     return render(request, "parlays/detail.html", ctx)
+
+
+
+
+
+@require_http_methods(["GET", "POST"])
+
+def parlay_detail(request, pk):
+
+    parlay = get_object_or_404(
+
+        Parlay.objects.prefetch_related("legs", "participants"),
+
+        pk=pk,
+
+    )
+
+    if not parlay.is_public:
+
+        raise Http404()
+
+    return _render_parlay_page(request, parlay, is_host_view=False)
 
 
 
@@ -705,13 +775,21 @@ def _handle_participant_action(request, parlay, action: str) -> str | None:
 
 
 
-def _parlay_context(request, parlay, join_form, ownership_action_error=None):
+def _parlay_context(
+    request,
+    parlay,
+    join_form,
+    *,
+    is_host_view: bool,
+    ownership_action_error=None,
+):
 
     from .utils import build_ownership_bar, ownership_color
 
 
 
-    is_creator = request.session.get(f"creator_{parlay.id}") is True
+    is_creator = is_host_view
+    page_url = _parlay_page_url(parlay, is_host_view=is_host_view)
 
     approved = list(
 
@@ -823,7 +901,7 @@ def _parlay_context(request, parlay, join_form, ownership_action_error=None):
 
     show_join_form = (
 
-        not is_creator
+        not is_host_view
 
         and parlay.status == ParlayStatus.OPEN
 
@@ -853,7 +931,13 @@ def _parlay_context(request, parlay, join_form, ownership_action_error=None):
 
         "share_url": parlay.share_url,
 
+        "page_url": page_url,
+
+        "ownership_poll_url": f"{page_url}?partial=ownership",
+
         "is_creator": is_creator,
+
+        "is_host_view": is_host_view,
 
         "has_pending_participants": has_pending_participants,
 
@@ -917,14 +1001,17 @@ def copy_link_fragment(request, pk):
 
 
 
-@require_GET
+@require_http_methods(["GET", "POST"])
 def host_parlay(request, host_code):
     code = (host_code or "").strip()
     if len(code) != 5 or not code.isdigit():
         raise Http404()
-    parlay = get_object_or_404(Parlay, host_code=code)
+    parlay = get_object_or_404(
+        Parlay.objects.prefetch_related("legs", "participants"),
+        host_code=code,
+    )
     request.session[f"creator_{parlay.id}"] = True
-    return redirect("parlays:detail", pk=parlay.id)
+    return _render_parlay_page(request, parlay, is_host_view=True)
 
 
 @require_http_methods(["GET", "POST"])

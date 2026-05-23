@@ -1,21 +1,21 @@
-{% load parlay_extras %}
-{# live: dynamic JS on create/edit form; payout_amount: static or initial value for live box #}
-
-<div class="payout-box rounded-2xl border-2 border-emerald-500/40 bg-emerald-500/10 px-5 py-5 text-center">
-  <p class="text-xs text-slate-400 uppercase tracking-wide mb-2">Potential payout</p>
-
-  {% if live %}
-  <p class="payout-display text-5xl font-extrabold text-emerald-400 leading-none"
-     data-payout-display
-     {% if payout_amount %}data-initial-display="{{ payout_amount|currency }}"{% endif %}>
-    {% if payout_amount %}{{ payout_amount|currency }}{% else %}$ —{% endif %}
-  </p>
-  {% elif payout_amount %}
-  <p class="text-5xl font-extrabold text-emerald-400 leading-none">{{ payout_amount|currency }}</p>
-  {% else %}
-  <p class="text-5xl font-extrabold text-emerald-400 leading-none">$ —</p>
-  {% endif %}
-
-  <p class="text-xs text-slate-500 mt-3">Total return if the parlay wins (stake + profit)</p>
-</div>
+{% load parlay_extras %}
+{# live: dynamic JS on create/edit form; payout_amount: static or initial value for live box #}
+
+<div class="payout-box rounded-2xl border-2 border-emerald-500/40 bg-emerald-500/10 px-5 py-5 text-center">
+  <p class="text-xs text-slate-400 uppercase tracking-wide mb-2">Potential payout</p>
+
+  {% if live %}
+  <p class="payout-display text-5xl font-extrabold text-emerald-400 leading-none"
+     data-payout-display
+     {% if payout_amount %}data-initial-display="{{ payout_amount|currency }}"{% endif %}>
+    {% if payout_amount %}{{ payout_amount|currency }}{% else %}$ —{% endif %}
+  </p>
+  {% elif payout_amount %}
+  <p class="text-5xl font-extrabold text-emerald-400 leading-none">{{ payout_amount|currency }}</p>
+  {% else %}
+  <p class="text-5xl font-extrabold text-emerald-400 leading-none">$ —</p>
+  {% endif %}
+
+  <p class="text-xs text-slate-400 whitespace-nowrap mt-3">Total return if the parlay wins (stake + profit)</p>
+</div>
 
