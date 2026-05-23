@@ -1,0 +1,10 @@
+{# Auto-refresh only when the join form is hidden — polling wipes in-progress name/contribution input #}
+<div id="ownership-panel"
+     {% if parlay.status != "open" or remaining_wager <= 0 %}
+     hx-get="{% url 'parlays:detail' parlay.id %}?partial=ownership"
+     hx-trigger="every 5s"
+     hx-swap="innerHTML"
+     {% endif %}>
+  {% include "parlays/partials/parlay_ownership_inner.html" %}
+</div>
+

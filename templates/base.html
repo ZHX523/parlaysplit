@@ -1,0 +1,50 @@
+{% load static meta %}
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  {% include "meta/meta.html" %}
+  <meta name="theme-color" content="#0f172a">
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+  <link rel="stylesheet" href="{% static 'css/output.css' %}">
+  <script src="{% static 'js/parlay-form.js' %}?v=2"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.14.3/dist/cdn.min.js"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  {% if plausible_domain %}
+  <script defer data-domain="{{ plausible_domain }}" src="https://plausible.io/js/script.js"></script>
+  {% endif %}
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-full bg-slate-950 text-slate-100 flex flex-col" hx-boost="true">
+  <header class="border-b border-slate-800/80 bg-slate-950/90 backdrop-blur sticky top-0 z-40 safe-top">
+    <div class="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="{% url 'parlays:landing' %}" class="font-bold text-lg tracking-tight text-emerald-400">
+        ParlaySplit
+      </a>
+      <a href="{% url 'parlays:create' %}" class="btn-primary text-sm py-2 px-4">+ Parlay</a>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-lg mx-auto w-full px-4 py-6 pb-24">
+    {% if messages %}
+    <div class="mb-4 space-y-2">
+      {% for message in messages %}
+      <div class="rounded-lg px-4 py-3 text-sm bg-slate-800 border border-slate-700">{{ message }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="border-t border-slate-800 bg-slate-900/50 safe-bottom">
+    <div class="max-w-lg mx-auto px-4 py-4 text-xs text-slate-500 space-y-2">
+      {% for disclaimer in legal_disclaimers %}
+      <p>{{ disclaimer }}</p>
+      {% endfor %}
+      <p class="text-slate-600">&copy; ParlaySplit — coordination tool only.</p>
+    </div>
+  </footer>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

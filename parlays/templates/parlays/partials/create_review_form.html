@@ -1,0 +1,38 @@
+<h2 class="font-semibold text-sm text-slate-300 mb-1">Review & confirm</h2>
+
+<p class="text-xs text-slate-500 mb-4">Edit anything the scan or link import missed, then create your shareable parlay.</p>
+
+
+
+{% if external_link %}
+
+<p class="text-xs text-emerald-400/90 mb-3 break-all">Linked slip: {{ external_link }}</p>
+
+{% endif %}
+
+
+
+<form method="post" class="space-y-4">
+
+  {% csrf_token %}
+
+  <input type="hidden" name="action" value="create">
+
+  <input type="hidden" name="submission_method" value="{{ submission_method }}">
+
+  {% if external_link %}
+
+  <input type="hidden" name="external_link" value="{{ external_link }}">
+
+  {% endif %}
+
+
+
+  {% include "parlays/partials/parlay_entry_fields.html" with form=form %}
+
+
+
+  <button type="submit" class="btn-primary w-full">Create & get share link</button>
+
+</form>
+

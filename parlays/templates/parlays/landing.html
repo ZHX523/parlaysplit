@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<section class="text-center space-y-6 pt-4">
+  <div class="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 text-xs text-emerald-300">
+    No login · No wagers · Share instantly
+  </div>
+
+  <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight tracking-tight">
+    Coordinate group parlays<br>
+    <span class="text-emerald-400">without spreadsheet math.</span>
+  </h1>
+
+  <p class="text-slate-400 text-lg leading-relaxed max-w-sm mx-auto">
+    Share betting slips, track participation, and estimate payouts with friends.
+  </p>
+
+  <div class="flex flex-col gap-3 pt-2">
+    <a href="{% url 'parlays:create' %}" class="btn-primary w-full text-center text-lg py-4">
+      Create a Parlay
+    </a>
+    <p class="text-xs text-slate-500">Upload a screenshot or enter details manually</p>
+  </div>
+</section>
+
+<section class="mt-12 grid gap-4">
+  <div class="card">
+    <div class="text-emerald-400 text-2xl mb-2">📸</div>
+    <h2 class="font-semibold mb-1">OCR slip import</h2>
+    <p class="text-sm text-slate-400">FanDuel & DraftKings screenshots auto-fill odds, wager, and legs.</p>
+  </div>
+  <div class="card">
+    <div class="text-emerald-400 text-2xl mb-2">🔗</div>
+    <h2 class="font-semibold mb-1">Shareable link</h2>
+    <p class="text-sm text-slate-400">Friends claim part of the wager by name — host keeps the rest.</p>
+  </div>
+  <div class="card">
+    <div class="text-emerald-400 text-2xl mb-2">📊</div>
+    <h2 class="font-semibold mb-1">Estimated splits</h2>
+    <p class="text-sm text-slate-400">Ownership % and payout estimates for planning — not guaranteed.</p>
+  </div>
+</section>
+{% endblock %}

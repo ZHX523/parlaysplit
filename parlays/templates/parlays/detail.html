@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+
+
+{% block extra_head %}
+
+<style>[x-cloak]{display:none!important}</style>
+
+{% endblock %}
+
+
+
+{% block content %}
+
+{% include "parlays/partials/parlay_live.html" %}
+
+
+
+{% if is_creator and edit_form %}
+
+<section class="card mt-6"
+
+         x-data="{ editOpen: {% if edit_form.errors %}true{% else %}false{% endif %} }">
+
+  <button type="button"
+
+          class="collapse-toggle"
+
+          @click="editOpen = !editOpen"
+
+          :aria-expanded="editOpen">
+
+    <div class="min-w-0 flex-1">
+
+      <div class="flex flex-wrap items-center gap-2">
+
+        <h2 class="font-semibold text-sm text-slate-300">Edit parlay</h2>
+
+        <span class="status-badge status-open">Host</span>
+
+      </div>
+
+      <p class="text-xs text-slate-500 mt-1" x-show="!editOpen" x-cloak>
+
+        Update odds, wager, legs, and split offered
+
+      </p>
+
+    </div>
+
+    <span class="collapse-chevron"
+
+          :class="editOpen && 'collapse-chevron-open'"
+
+          aria-hidden="true">▼</span>
+
+  </button>
+
+  <div x-show="editOpen"
+
+       x-cloak
+
+       class="collapse-panel"
+
+       data-parlay-form
+
+       data-max-legs="{{ max_legs }}"
+
+       x-init="$watch('editOpen', v => { if (v && window.initParlayForms) window.initParlayForms() })">
+
+    <form method="post" class="space-y-4">
+
+      {% csrf_token %}
+
+      <input type="hidden" name="action" value="edit">
+
+      {% include "parlays/partials/parlay_entry_fields.html" with form=edit_form %}
+
+      <button type="submit" class="btn-primary w-full py-3">Save changes</button>
+
+    </form>
+
+  </div>
+
+</section>
+
+{% endif %}
+
+
+
+<section class="mt-6" x-data="{ copied: false }">
+  <button type="button"
+          class="btn-secondary w-full py-3"
+          @click="navigator.clipboard.writeText('{{ share_url }}'); copied = true; setTimeout(() => copied = false, 2000)">
+    <span x-text="copied ? 'Copied!' : 'Copy share link'"></span>
+  </button>
+</section>
+
+{% endblock %}
+
+

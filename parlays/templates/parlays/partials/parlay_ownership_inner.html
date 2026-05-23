@@ -1,0 +1,112 @@
+{% load parlay_extras %}
+<section class="card">
+  <div class="flex justify-between items-center mb-3 gap-2">
+    <h2 class="font-semibold text-sm text-slate-300">Ownership split</h2>
+    {% if parlay.status == "open" %}
+    <span class="status-badge status-open">OPEN</span>
+    {% endif %}
+  </div>
+  <p class="text-xs text-slate-500 mb-3">Based on {{ parlay.wager_amount|currency }} wager</p>
+
+  {% if ownership_segments %}
+  <div class="ownership-bar mb-4" role="img" aria-label="Ownership split by participant">
+    {% for seg in ownership_segments %}
+    <div class="ownership-bar-segment"
+         style="width: {{ seg.percent }}%; background-color: {{ seg.color }};"
+         title="{{ seg.nickname }} — {{ seg.percent }}%"></div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="space-y-3 mb-4">
+    {% for row in participant_rows %}
+    <div class="flex justify-between items-start gap-2 py-2 border-b border-slate-800 last:border-0">
+      <div class="min-w-0">
+        <p class="font-medium flex items-center gap-2">
+          <span class="ownership-swatch shrink-0" style="background-color: {{ row.color }};" aria-hidden="true"></span>
+          <span class="truncate">
+            {{ row.nickname }}
+            {% if row.is_host %}
+            <span class="text-xs text-slate-500 font-normal">(host)</span>
+            {% endif %}
+          </span>
+        </p>
+        <p class="text-xs text-slate-500 ml-5">
+          {% if row.is_host %}
+          {{ row.contribution|currency }} of {{ parlay.wager_amount|currency }} wager
+          {% else %}
+          {{ row.contribution|currency }} toward wager
+          {% endif %}
+        </p>
+      </div>
+      <div class="text-right text-sm shrink-0">
+        {% if row.ownership is not None %}
+        <p style="color: {{ row.color }};" class="font-semibold">{{ row.ownership }}%</p>
+        {% if row.estimated %}
+        <p class="text-xs text-slate-400">est. {{ row.estimated|currency }}</p>
+        {% endif %}
+        {% else %}—{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <p class="text-xs text-slate-500 mb-4">
+    {% if parlay.split_offered_percent < 100 %}
+    Split offered: {{ parlay.split_offered_percent }}% ({{ parlay.max_friends_stake|currency }} max for friends)
+    · Host reserved {{ parlay.host_reserved_percent }}%
+    <br>
+    {% endif %}
+    Friends claimed {{ total_contributions|currency }} · Host keeps {{ parlay.host_stake_amount|currency }}
+  </p>
+
+  {% if parlay.status == "open" and remaining_wager > 0 %}
+  <form method="post"
+        data-join-form
+        hx-post="{% url 'parlays:detail' parlay.id %}"
+        hx-target="#ownership-panel"
+        hx-swap="innerHTML"
+        hx-boost="false"
+        class="space-y-3 border-t border-slate-800 pt-4">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="join">
+    <p class="text-sm font-medium text-emerald-400">Join this parlay</p>
+    {% if parlay.split_offered_percent < 100 %}
+    <p class="text-xs text-slate-500">{{ remaining_wager|currency }} of {{ parlay.max_friends_stake|currency }} split still available for friends</p>
+    {% else %}
+    <p class="text-xs text-slate-500">{{ remaining_wager|currency }} of {{ parlay.wager_amount|currency }} wager still available</p>
+    {% endif %}
+    <div>
+      <label class="label" for="{{ join_form.nickname.id_for_label }}">Your name</label>
+      {{ join_form.nickname }}
+      {% if join_form.nickname.errors %}<p class="text-red-400 text-sm mt-1">{{ join_form.nickname.errors.0 }}</p>{% endif %}
+    </div>
+    <div>
+      <label class="label" for="{{ join_form.contribution_amount.id_for_label }}">Contribution ($)</label>
+      <input type="text"
+             name="contribution_amount"
+             id="{{ join_form.contribution_amount.id_for_label }}"
+             class="input-field"
+             placeholder="$25.00"
+             inputmode="decimal"
+             autocomplete="off"
+             data-format-contribution
+             value="{{ join_form.contribution_amount.value|default_if_none:'' }}">
+      {% if join_form.contribution_amount.errors %}<p class="text-red-400 text-sm mt-1">{{ join_form.contribution_amount.errors.0 }}</p>{% endif %}
+    </div>
+    {% if join_form.non_field_errors %}
+    <p class="text-red-400 text-sm">{{ join_form.non_field_errors.0 }}</p>
+    {% endif %}
+    <button type="submit" class="btn-primary w-full py-3">Join</button>
+  </form>
+  {% elif parlay.status == "open" %}
+  <p class="text-sm text-amber-300 border-t border-slate-800 pt-4">
+    {% if parlay.split_offered_percent < 100 %}
+    The full {{ parlay.max_friends_stake|currency }} split offered to friends has been claimed.
+    {% else %}
+    The full {{ parlay.wager_amount|currency }} wager has been claimed.
+    {% endif %}
+  </p>
+  {% endif %}
+</section>
+

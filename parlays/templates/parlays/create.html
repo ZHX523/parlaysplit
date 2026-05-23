@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+
+
+{% block extra_head %}
+<style>[x-cloak]{display:none!important}</style>
+{% endblock %}
+
+
+
+{% block content %}
+
+<h1 class="text-2xl font-bold mb-1">Create a Parlay</h1>
+
+<p class="text-slate-400 text-sm mb-6">Choose how you want to submit your bet for parlay analysis.</p>
+
+
+
+<div hx-boost="false" x-data="{
+
+  method: '{{ submission_method|default:'' }}',
+
+  pick(m) { this.method = m; }
+
+}" class="space-y-4">
+
+
+
+  <section class="card">
+
+    <h2 class="font-semibold text-sm text-slate-300 mb-3">How would you like to submit?</h2>
+
+    <div class="grid gap-3">
+
+      <button type="button"
+              data-pick-manual
+              @click="pick('manual'); $nextTick(() => window.initParlayForms && window.initParlayForms())"
+              :class="method === 'manual' ? 'method-card method-card-active' : 'method-card'">
+
+        <span class="method-card-title">Enter manually</span>
+
+        <span class="method-card-desc">Type odds, wager, and each leg yourself</span>
+
+      </button>
+
+      <button type="button"
+
+              @click="pick('screenshot')"
+
+              :class="method === 'screenshot' ? 'method-card method-card-active' : 'method-card'">
+
+        <span class="method-card-title">Upload screenshot</span>
+
+        <span class="method-card-desc">FanDuel or DraftKings bet slip image — OCR fills the form</span>
+
+      </button>
+
+      <button type="button"
+
+              @click="pick('link')"
+
+              :class="method === 'link' ? 'method-card method-card-active' : 'method-card'">
+
+        <span class="method-card-title">Bet slip link</span>
+
+        <span class="method-card-desc">Paste the Share link from FanDuel or DraftKings</span>
+
+      </button>
+
+    </div>
+
+  </section>
+
+
+
+  <section x-show="method === 'manual'" x-cloak class="card">
+
+    <h2 class="font-semibold text-sm text-slate-300 mb-3">Parlay details</h2>
+
+    <form method="post" class="space-y-4">
+
+      {% csrf_token %}
+
+      <input type="hidden" name="action" value="create">
+
+      <input type="hidden" name="submission_method" value="manual">
+
+      {% include "parlays/partials/parlay_entry_fields.html" with form=manual_form %}
+
+      <button type="submit" class="btn-primary w-full">Create & get share link</button>
+
+    </form>
+
+  </section>
+
+
+
+  <section x-show="method === 'screenshot'" x-cloak class="card">
+
+    {% if show_review and form %}
+
+      {% include "parlays/partials/create_review_form.html" %}
+
+    {% else %}
+
+    <h2 class="font-semibold text-sm text-slate-300 mb-3">Upload bet slip screenshot</h2>
+
+    <p class="text-xs text-slate-500 mb-4">Take a screenshot of your FanDuel or DraftKings parlay receipt. We'll scan it and let you edit before creating.</p>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-3">
+
+      {% csrf_token %}
+
+      <input type="hidden" name="action" value="upload_ocr">
+
+      <input type="hidden" name="submission_method" value="screenshot">
+
+      <div>
+
+        <label class="label" for="{{ ocr_form.image.id_for_label }}">Screenshot</label>
+
+        {{ ocr_form.image }}
+
+        {% if ocr_form.image.errors %}
+
+        <p class="text-red-400 text-sm mt-1">{{ ocr_form.image.errors.0 }}</p>
+
+        {% endif %}
+
+      </div>
+
+      <button type="submit" class="btn-primary w-full">Scan slip</button>
+
+    </form>
+
+
+
+    {% if ocr_upload %}
+
+    <div id="ocr-status"
+
+         class="mt-4"
+
+         {% if ocr_upload.status == "pending" or ocr_upload.status == "processing" %}
+
+         hx-get="{% url 'parlays:ocr_status' ocr_upload.id %}"
+
+         hx-trigger="load, every 2s"
+
+         hx-swap="innerHTML"
+
+         {% endif %}>
+
+      {% include "parlays/partials/ocr_status.html" %}
+
+    </div>
+
+    {% if ocr_upload.status == "completed" %}
+
+    <div class="mt-4">
+
+      <a href="{% url 'parlays:create' %}?method=screenshot&ocr={{ ocr_upload.id }}"
+
+         class="btn-secondary w-full text-center block">
+
+        Review scanned details
+
+      </a>
+
+    </div>
+
+    {% endif %}
+
+    {% endif %}
+
+    {% endif %}
+
+  </section>
+
+
+
+  <section x-show="method === 'link'" x-cloak class="card">
+
+    {% if show_review and form %}
+
+      {% include "parlays/partials/create_review_form.html" %}
+
+    {% else %}
+
+    <h2 class="font-semibold text-sm text-slate-300 mb-3">Paste shared bet link</h2>
+
+    <p class="text-xs text-slate-500 mb-4">In FanDuel or DraftKings, open your bet slip → Share → copy link, then paste it here.</p>
+
+    <form method="post" class="space-y-3">
+
+      {% csrf_token %}
+
+      <input type="hidden" name="action" value="submit_link">
+
+      <input type="hidden" name="submission_method" value="link">
+
+      <div>
+
+        <label class="label" for="{{ link_form.bet_slip_url.id_for_label }}">Shared bet link</label>
+
+        {{ link_form.bet_slip_url }}
+
+        {% if link_form.bet_slip_url.errors %}
+
+        <p class="text-red-400 text-sm mt-1">{{ link_form.bet_slip_url.errors.0 }}</p>
+
+        {% endif %}
+
+      </div>
+
+      <button type="submit" class="btn-primary w-full">Analyze link</button>
+
+    </form>
+
+    {% endif %}
+
+  </section>
+
+
+
+</div>
+
+{% endblock %}
+
+
+
+

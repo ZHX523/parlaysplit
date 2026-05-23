@@ -1,0 +1,13 @@
+Django>=5.1,<5.2
+psycopg[binary]>=3.2,<4
+gunicorn>=23.0,<24
+celery[redis]>=5.4,<6
+redis>=5.0,<6
+Pillow>=11.0,<12
+opencv-python-headless>=4.10,<5
+pytesseract>=0.3.13,<1
+django-storages[s3]>=1.14,<2
+boto3>=1.35,<2
+django-meta>=2.4,<3
+python-decouple>=3.8,<4
+whitenoise>=6.8,<7

@@ -1,0 +1,591 @@
+import uuid
+
+from decimal import Decimal
+
+
+
+from django.conf import settings
+
+from django.core.validators import MaxValueValidator, MinValueValidator
+
+from django.db import models
+
+from django.db.models import Sum
+
+from django.utils import timezone
+
+
+
+
+
+class Sportsbook(models.TextChoices):
+
+    FANDUEL = "fanduel", "FanDuel"
+
+    DRAFTKINGS = "draftkings", "DraftKings"
+
+    KALSHI = "kalshi", "Kalshi"
+
+    BETMGM = "betmgm", "BetMGM"
+
+    CAESARS = "caesars", "Caesars"
+
+    ESPNBET = "espnbet", "ESPN BET"
+
+    OTHER = "other", "Other"
+
+
+
+
+
+MVP_SPORTSBOOK_CHOICES = (
+
+    (Sportsbook.FANDUEL, "FanDuel"),
+
+    (Sportsbook.DRAFTKINGS, "DraftKings"),
+
+    (Sportsbook.KALSHI, "Kalshi"),
+
+)
+
+
+
+
+
+class LegType(models.TextChoices):
+
+    MONEYLINE = "moneyline", "Moneyline"
+
+    SPREAD = "spread", "Spread"
+
+    TOTAL = "total", "Total (O/U)"
+
+    PLAYER_PROP = "player_prop", "Player prop"
+
+    TEAM_PROP = "team_prop", "Team prop"
+
+    OTHER = "other", "Other"
+
+
+
+
+
+class ParlayStatus(models.TextChoices):
+
+    DRAFT = "draft", "Draft"
+
+    OPEN = "open", "Open for participants"
+
+    LOCKED = "locked", "Locked"
+
+    SETTLED = "settled", "Settled (informational)"
+
+
+
+
+
+class Parlay(models.Model):
+
+    """A shareable group parlay coordination record."""
+
+
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    slug = models.SlugField(max_length=12, unique=True, editable=False)
+
+    creator_nickname = models.CharField(max_length=64, default="Host")
+
+    sportsbook = models.CharField(
+
+        max_length=32,
+
+        choices=Sportsbook.choices,
+
+        default=Sportsbook.FANDUEL,
+
+    )
+
+    odds_american = models.IntegerField(
+
+        null=True,
+
+        blank=True,
+
+        help_text="American odds, e.g. +450",
+
+    )
+
+    odds_decimal = models.DecimalField(
+
+        max_digits=10,
+
+        decimal_places=4,
+
+        null=True,
+
+        blank=True,
+
+    )
+
+    wager_amount = models.DecimalField(
+
+        max_digits=12,
+
+        decimal_places=2,
+
+        validators=[MinValueValidator(Decimal("0.01"))],
+
+        default=Decimal("0.00"),
+
+    )
+
+    potential_payout = models.DecimalField(
+
+        max_digits=12,
+
+        decimal_places=2,
+
+        null=True,
+
+        blank=True,
+
+        validators=[MinValueValidator(Decimal("0.00"))],
+
+    )
+
+    split_offered_percent = models.DecimalField(
+
+        max_digits=5,
+
+        decimal_places=2,
+
+        default=Decimal("100.00"),
+
+        validators=[
+
+            MinValueValidator(Decimal("1")),
+
+            MaxValueValidator(Decimal("100")),
+
+        ],
+
+        help_text="Percent of wager friends may claim in total (host keeps the rest).",
+
+    )
+
+    external_link = models.URLField(max_length=500, blank=True)
+
+    notes = models.TextField(blank=True)
+
+    status = models.CharField(
+
+        max_length=16,
+
+        choices=ParlayStatus.choices,
+
+        default=ParlayStatus.OPEN,
+
+    )
+
+    is_public = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+
+    class Meta:
+
+        ordering = ["-created_at"]
+
+        verbose_name_plural = "parlays"
+
+
+
+    def __str__(self):
+
+        return f"Parlay {self.slug} by {self.creator_nickname}"
+
+
+
+    def save(self, *args, **kwargs):
+
+        if not self.slug:
+
+            self.slug = uuid.uuid4().hex[:12]
+
+        super().save(*args, **kwargs)
+
+
+
+    @property
+
+    def share_url(self):
+
+        return f"{settings.SITE_URL}/p/{self.id}/"
+
+
+
+    @property
+
+    def total_contributions(self) -> Decimal:
+
+        total = self.participants.aggregate(total=Sum("contribution_amount"))["total"]
+
+        return total or Decimal("0.00")
+
+
+
+    @property
+
+    def participant_count(self) -> int:
+
+        return self.participants.count()
+
+
+
+    @property
+
+    def max_friends_stake(self) -> Decimal:
+
+        """Dollar amount friends may claim in aggregate."""
+
+        if self.wager_amount <= 0:
+
+            return Decimal("0.00")
+
+        pool = self.wager_amount * (self.split_offered_percent / Decimal("100"))
+
+        return pool.quantize(Decimal("0.01"))
+
+
+
+    @property
+
+    def host_reserved_stake(self) -> Decimal:
+
+        """Minimum wager slice reserved for the host."""
+
+        reserved = self.wager_amount - self.max_friends_stake
+
+        return max(Decimal("0.00"), reserved).quantize(Decimal("0.01"))
+
+
+
+    @property
+
+    def host_reserved_percent(self) -> Decimal:
+
+        return (Decimal("100") - self.split_offered_percent).quantize(Decimal("0.01"))
+
+
+
+    @property
+
+    def remaining_for_friends(self) -> Decimal:
+
+        """Wager dollars still available for friends to claim."""
+
+        remaining = self.max_friends_stake - self.total_contributions
+
+        return max(Decimal("0.00"), remaining).quantize(Decimal("0.01"))
+
+
+
+    @property
+
+    def host_stake_amount(self) -> Decimal:
+
+        """Wager slice kept by the host (wager minus friend contributions)."""
+
+        remaining = self.wager_amount - self.total_contributions
+
+        return max(Decimal("0.00"), remaining).quantize(Decimal("0.01"))
+
+
+
+    @property
+
+    def remaining_wager(self) -> Decimal:
+
+        return self.remaining_for_friends
+
+
+
+    def _share_of_wager(self, amount: Decimal) -> Decimal | None:
+
+        if self.wager_amount <= 0:
+
+            return None
+
+        return amount / self.wager_amount
+
+
+
+    def ownership_percent_for(self, contribution: Decimal) -> Decimal | None:
+
+        share = self._share_of_wager(contribution)
+
+        if share is None:
+
+            return None
+
+        return (share * Decimal("100")).quantize(Decimal("0.01"))
+
+
+
+    def host_ownership_percent(self) -> Decimal | None:
+
+        return self.ownership_percent_for(self.host_stake_amount)
+
+
+
+    def estimated_payout_for(self, contribution: Decimal) -> Decimal | None:
+
+        if not self.potential_payout:
+
+            return None
+
+        share = self._share_of_wager(contribution)
+
+        if share is None:
+
+            return None
+
+        return (self.potential_payout * share).quantize(Decimal("0.01"))
+
+
+
+    def host_estimated_payout(self) -> Decimal | None:
+
+        return self.estimated_payout_for(self.host_stake_amount)
+
+
+
+
+
+class ParlayLeg(models.Model):
+
+    parlay = models.ForeignKey(
+
+        Parlay,
+
+        on_delete=models.CASCADE,
+
+        related_name="legs",
+
+    )
+
+    leg_type = models.CharField(
+
+        max_length=32,
+
+        choices=LegType.choices,
+
+        default=LegType.OTHER,
+
+    )
+
+    description = models.CharField(max_length=500)
+
+    sort_order = models.PositiveSmallIntegerField(default=0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+
+    class Meta:
+
+        ordering = ["sort_order", "created_at"]
+
+
+
+    def __str__(self):
+
+        return f"{self.get_leg_type_display()}: {self.description[:60]}"
+
+
+
+
+
+class Participant(models.Model):
+
+    parlay = models.ForeignKey(
+
+        Parlay,
+
+        on_delete=models.CASCADE,
+
+        related_name="participants",
+
+    )
+
+    nickname = models.CharField(max_length=64)
+
+    contribution_amount = models.DecimalField(
+
+        max_digits=12,
+
+        decimal_places=2,
+
+        validators=[MinValueValidator(Decimal("0.01"))],
+
+    )
+
+    session_key = models.CharField(max_length=64, blank=True, db_index=True)
+
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+
+
+    class Meta:
+
+        ordering = ["-joined_at"]
+
+        constraints = [
+
+            models.UniqueConstraint(
+
+                fields=["parlay", "nickname"],
+
+                name="unique_participant_nickname_per_parlay",
+
+            ),
+
+        ]
+
+
+
+    def __str__(self):
+
+        from .utils import format_dollars
+
+        return f"{self.nickname} ({format_dollars(self.contribution_amount)})"
+
+
+
+    @property
+
+    def ownership_percent(self) -> Decimal | None:
+
+        return self.parlay.ownership_percent_for(self.contribution_amount)
+
+
+
+    @property
+
+    def estimated_payout(self) -> Decimal | None:
+
+        return self.parlay.estimated_payout_for(self.contribution_amount)
+
+
+
+
+
+class OCRUploadStatus(models.TextChoices):
+
+    PENDING = "pending", "Pending"
+
+    PROCESSING = "processing", "Processing"
+
+    COMPLETED = "completed", "Completed"
+
+    FAILED = "failed", "Failed"
+
+
+
+
+
+class OCRUpload(models.Model):
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    parlay = models.ForeignKey(
+
+        Parlay,
+
+        on_delete=models.CASCADE,
+
+        related_name="ocr_uploads",
+
+        null=True,
+
+        blank=True,
+
+    )
+
+    image = models.ImageField(upload_to="ocr/%Y/%m/%d/")
+
+    status = models.CharField(
+
+        max_length=16,
+
+        choices=OCRUploadStatus.choices,
+
+        default=OCRUploadStatus.PENDING,
+
+    )
+
+    raw_text = models.TextField(blank=True)
+
+    parsed_data = models.JSONField(default=dict, blank=True)
+
+    error_message = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    processed_at = models.DateTimeField(null=True, blank=True)
+
+
+
+    class Meta:
+
+        ordering = ["-created_at"]
+
+
+
+    def __str__(self):
+
+        return f"OCR {self.id} ({self.status})"
+
+
+
+    def mark_processing(self):
+
+        self.status = OCRUploadStatus.PROCESSING
+
+        self.save(update_fields=["status"])
+
+
+
+    def mark_completed(self, raw_text: str, parsed_data: dict):
+
+        self.status = OCRUploadStatus.COMPLETED
+
+        self.raw_text = raw_text
+
+        self.parsed_data = parsed_data
+
+        self.processed_at = timezone.now()
+
+        self.save(
+
+            update_fields=["status", "raw_text", "parsed_data", "processed_at"],
+
+        )
+
+
+
+    def mark_failed(self, message: str):
+
+        self.status = OCRUploadStatus.FAILED
+
+        self.error_message = message
+
+        self.processed_at = timezone.now()
+
+        self.save(update_fields=["status", "error_message", "processed_at"])
+
+
