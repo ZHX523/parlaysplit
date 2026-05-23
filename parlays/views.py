@@ -47,6 +47,11 @@ from .opengraph import render_parlay_og_svg
 from .services.og_image import get_parlay_og_etag, get_parlay_og_image_bytes
 from .seo import build_page_meta, build_parlay_page_meta
 from .tasks import process_ocr_upload
+from .utils import (
+    clear_expired_host_codes,
+    is_valid_host_code_format,
+    normalize_host_code,
+)
 
 SUBMISSION_MANUAL = "manual"
 
@@ -55,9 +60,25 @@ SUBMISSION_SCREENSHOT = "screenshot"
 SUBMISSION_LINK = "link"
 
 
+def _get_parlay_by_host_code(host_code: str) -> Parlay:
+    clear_expired_host_codes()
+    code = normalize_host_code(host_code)
+    if not is_valid_host_code_format(code):
+        raise Http404()
+    parlay = get_object_or_404(
+        Parlay.objects.prefetch_related("legs", "participants"),
+        host_code=code,
+    )
+    if parlay.clear_host_code_if_expired():
+        raise Http404()
+    return parlay
+
+
 def _redirect_after_parlay_create(request, parlay):
     if not parlay.host_code:
         parlay.save()
+    if not parlay.host_code_active:
+        raise Http404()
     request.session[f"creator_{parlay.id}"] = True
     request.session[f"show_share_intro_{parlay.id}"] = True
     return redirect("parlays:host", host_code=parlay.host_code)
@@ -650,6 +671,8 @@ def _render_parlay_page(request, parlay, *, is_host_view: bool):
 
     ctx["host_code"] = parlay.host_code if is_host_view else None
 
+    ctx["host_code_expires_at"] = parlay.host_code_expires_at if is_host_view else None
+
     ctx["leg_type_choices"] = LegType.choices
 
     ctx["max_legs"] = settings.MAX_LEGS
@@ -960,6 +983,8 @@ def _parlay_context(
 
         "ownership_action_error": ownership_action_error,
 
+        "host_code_expires_at": parlay.host_code_expires_at if is_host_view else None,
+
     }
 
 
@@ -1023,29 +1048,34 @@ def copy_link_fragment(request, pk):
 
 @require_http_methods(["GET", "POST"])
 def host_parlay(request, host_code):
-    code = (host_code or "").strip()
-    if len(code) != 5 or not code.isdigit():
-        raise Http404()
-    parlay = get_object_or_404(
-        Parlay.objects.prefetch_related("legs", "participants"),
-        host_code=code,
-    )
+    parlay = _get_parlay_by_host_code(host_code)
     request.session[f"creator_{parlay.id}"] = True
     return _render_parlay_page(request, parlay, is_host_view=True)
 
 
 @require_http_methods(["GET", "POST"])
 def host_lookup(request):
+    clear_expired_host_codes()
     error = None
     submitted_code = ""
     if request.method == "POST":
-        submitted_code = (request.POST.get("host_code") or "").strip()
-        if len(submitted_code) == 5 and submitted_code.isdigit():
-            if Parlay.objects.filter(host_code=submitted_code).exists():
-                return redirect("parlays:host", host_code=submitted_code)
-            error = "No parlay found for that code. Check the number and try again."
+        submitted_code = normalize_host_code(request.POST.get("host_code"))
+        if is_valid_host_code_format(submitted_code):
+            parlay = Parlay.objects.filter(host_code=submitted_code).first()
+            if parlay and not parlay.clear_host_code_if_expired() and parlay.host_code_active:
+                return redirect("parlays:host", host_code=parlay.host_code)
+            if parlay and not parlay.host_code:
+                error = (
+                    "This host code has expired. Codes are valid for "
+                    f"{getattr(settings, 'HOST_CODE_TTL_HOURS', 48)} hours after creation."
+                )
+            else:
+                error = "No parlay found for that code. Check the code and try again."
         else:
-            error = "Enter a valid 5-digit host code."
+            error = (
+                f"Enter a valid {getattr(settings, 'HOST_CODE_LENGTH', 6)}-character host code "
+                "(letters and numbers)."
+            )
     return render(
         request,
         "parlays/host_lookup.html",
@@ -1053,12 +1083,15 @@ def host_lookup(request):
             "error": error,
             "submitted_code": submitted_code,
             "meta": build_page_meta(request, "host_lookup"),
+            "host_code_length": getattr(settings, "HOST_CODE_LENGTH", 6),
         },
     )
 
 
 def set_creator_session(request, pk):
     parlay = get_object_or_404(Parlay, pk=pk)
+    if parlay.clear_host_code_if_expired() or not parlay.host_code_active:
+        raise Http404()
     request.session[f"creator_{parlay.id}"] = True
     return redirect("parlays:host", host_code=parlay.host_code)
 

@@ -64,7 +64,7 @@ PAGE_SEO: dict[str, PageSEO] = {
     "host_lookup": PageSEO(
         title="Find Your Parlay | ParlaySplit",
         description=(
-            "Enter your 5-digit host code to open and manage your group parlay dashboard."
+            "Enter your host code to open and manage your group parlay dashboard."
         ),
         view_name="parlays:host_lookup",
         robots=None,

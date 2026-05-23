@@ -2,6 +2,12 @@ from celery import shared_task
 
 from .models import OCRUpload
 from .services.ocr import OCRService
+from .utils import clear_expired_host_codes
+
+
+@shared_task
+def clear_expired_host_codes_task():
+    return {"cleared": clear_expired_host_codes()}
 
 
 @shared_task(bind=True, max_retries=2, default_retry_delay=30)

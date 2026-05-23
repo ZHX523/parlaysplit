@@ -29,7 +29,14 @@ class ParlayAdmin(admin.ModelAdmin):
     )
     list_filter = ("status", "is_public")
     search_fields = ("slug", "creator_nickname", "host_code", "id")
-    readonly_fields = ("id", "slug", "host_code", "created_at", "updated_at")
+    readonly_fields = (
+        "id",
+        "slug",
+        "host_code",
+        "host_code_expires_at",
+        "created_at",
+        "updated_at",
+    )
     fieldsets = (
         (
             None,

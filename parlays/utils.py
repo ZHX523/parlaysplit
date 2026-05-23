@@ -1,22 +1,49 @@
-import random
+import secrets
+from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
+from django.utils import timezone
 
 from .models import Parlay
 
 DEFAULT_CREATOR_NICKNAME = "HOST"
 
 
-def generate_host_code() -> str:
-    """Unique 5-digit code (00000–99999) for host parlay lookup."""
-    from .models import Parlay
+def normalize_host_code(raw: str) -> str:
+    return (raw or "").strip().upper()
 
-    for _ in range(200):
-        code = f"{random.randint(0, 99999):05d}"
+
+def is_valid_host_code_format(code: str) -> bool:
+    """Accept current-length codes and legacy 5-digit numeric codes."""
+    if not code:
+        return False
+    max_len = getattr(settings, "HOST_CODE_LENGTH", 6)
+    if len(code) < 5 or len(code) > max_len:
+        return False
+    return code.isalnum()
+
+
+def generate_host_code() -> str:
+    """Unique alphanumeric host code for parlay lookup."""
+    length = getattr(settings, "HOST_CODE_LENGTH", 6)
+    alphabet = getattr(settings, "HOST_CODE_CHARSET", "ABCDEFGHJKLMNPQRSTUVWXYZ23456789")
+
+    for _ in range(300):
+        code = "".join(secrets.choice(alphabet) for _ in range(length))
         if not Parlay.objects.filter(host_code=code).exists():
             return code
     raise RuntimeError("Could not allocate a unique host code.")
+
+
+def clear_expired_host_codes() -> int:
+    """Clear host codes past their expiry. Returns number of parlays updated."""
+    now = timezone.now()
+    expired = Parlay.objects.filter(
+        host_code__isnull=False,
+        host_code_expires_at__lt=now,
+    )
+    return expired.update(host_code=None, host_code_expires_at=None)
 
 
 def format_dollars(value) -> str:

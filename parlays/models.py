@@ -62,11 +62,17 @@ class Parlay(models.Model):
 
     slug = models.SlugField(max_length=12, unique=True, editable=False)
     host_code = models.CharField(
-        max_length=5,
+        max_length=8,
         unique=True,
+        null=True,
         blank=True,
         db_index=True,
-        help_text="5-digit code for the host to find and manage this parlay.",
+        help_text="Alphanumeric code for the host to find and manage this parlay (expires after 48 hours).",
+    )
+    host_code_expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When set, host_code stops working after this time.",
     )
 
     creator_nickname = models.CharField(max_length=64, default="HOST")
@@ -176,13 +182,36 @@ class Parlay(models.Model):
 
 
     def save(self, *args, **kwargs):
+        from datetime import timedelta
+
         if not self.slug:
             self.slug = uuid.uuid4().hex[:12]
         if not self.host_code:
             from .utils import generate_host_code
 
             self.host_code = generate_host_code()
+            ttl_hours = getattr(settings, "HOST_CODE_TTL_HOURS", 48)
+            self.host_code_expires_at = timezone.now() + timedelta(hours=ttl_hours)
         super().save(*args, **kwargs)
+
+    def clear_host_code_if_expired(self) -> bool:
+        """Remove host_code when past expiry; returns True if cleared."""
+        if not self.host_code or not self.host_code_expires_at:
+            return False
+        if timezone.now() < self.host_code_expires_at:
+            return False
+        self.host_code = None
+        self.host_code_expires_at = None
+        self.save(update_fields=["host_code", "host_code_expires_at"])
+        return True
+
+    @property
+    def host_code_active(self) -> bool:
+        if not self.host_code:
+            return False
+        if self.host_code_expires_at and timezone.now() >= self.host_code_expires_at:
+            return False
+        return True
 
     @property
     def share_url(self):

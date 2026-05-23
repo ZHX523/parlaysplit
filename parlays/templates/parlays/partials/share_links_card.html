@@ -16,24 +16,10 @@
              this.hostCodeCopied = true;
              setTimeout(() => { this.hostCodeCopied = false; }, 2000);
            },
-           async shareLink() {
-             if (navigator.share) {
-               try {
-                 await navigator.share({
-                   title: 'Join this parlay on ParlaySplit',
-                   url: this.shareUrl,
-                 });
-                 return;
-               } catch (e) {
-                 if (e && e.name === 'AbortError') return;
-               }
-             }
-             await this.copyLink();
-           }
          }">
   {% if show_share_intro %}
   <p class="text-sm font-semibold text-emerald-400 mb-1">Parlay created</p>
-  <p class="text-xs text-slate-500 mb-4">Copy the <strong class="text-slate-300 font-medium">public link</strong> for friends to join. Bookmark this host page to approve requests and edit your parlay.</p>
+  <p class="text-xs text-slate-500 mb-4">Copy the <strong class="text-slate-300 font-medium">public link</strong> for friends to join. Bookmark this host page to approve requests and edit your parlay. Your host code expires 48 hours after creation.</p>
   {% else %}
   <h2 class="font-semibold text-sm text-slate-300 mb-3">Invite Friends 🔗</h2>
   {% if show_host_code %}
@@ -54,7 +40,7 @@
                aria-label="Public parlay link">
         <button type="button"
                 class="btn-primary px-4 text-sm"
-                @click="shareLink()">
+                @click="copyLink()">
           <span x-text="copied ? 'Copied!' : 'Share'"></span>
         </button>
       </div>
@@ -74,7 +60,7 @@
         </button>
       </div>
       <p class="text-xs text-emerald-400 mt-2" x-show="hostCodeCopied" x-cloak>Copied!</p>
-      <p class="text-xs text-slate-500 mt-2" x-show="!hostCodeCopied">Save this code to find your parlay later.</p>
+      <p class="text-xs text-slate-500 mt-2" x-show="!hostCodeCopied">Save this code to find your parlay later (expires in 48 hours).</p>
     </div>
     {% endif %}
   </div>
