@@ -55,6 +55,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "parlays.context_processors.legal_disclaimer",
                 "parlays.context_processors.site_settings",
+                "parlays.context_processors.seo_fallback",
             ],
         },
     },
@@ -141,10 +142,29 @@ META_SITE_PROTOCOL = "https" if not DEBUG else "http"
 META_SITE_DOMAIN = config("META_SITE_DOMAIN", default="localhost:8000")
 META_USE_OG_PROPERTIES = True
 META_USE_TWITTER_PROPERTIES = True
+META_USE_TITLE_TAG = True
 META_DEFAULT_KEYWORDS = ["parlay", "sports betting", "group bet", "coordination"]
 META_IMAGE_URL = f"{SITE_URL}/static/img/og-card.svg"
 
 PLAUSIBLE_DOMAIN = config("PLAUSIBLE_DOMAIN", default="")
+
+# OG preview image cache (versioned keys; TTL is a safety net)
+OG_IMAGE_CACHE_TIMEOUT = config("OG_IMAGE_CACHE_TIMEOUT", default=86400, cast=int)
+_cache_redis_url = config("CACHE_REDIS_URL", default="")
+if _cache_redis_url:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": _cache_redis_url,
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "parlaysplit",
+        }
+    }
 
 # ParlaySplit business constants
 MIN_CONTRIBUTION = Decimal("0.01")
@@ -154,6 +174,7 @@ MAX_LEGS = 20
 
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True

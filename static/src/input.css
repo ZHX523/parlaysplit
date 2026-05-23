@@ -23,16 +23,22 @@
     @apply mx-auto w-full max-w-lg px-4;
   }
   .app-header-inner {
-    @apply app-shell flex items-center justify-between gap-2 py-3 sm:gap-3;
+    @apply app-shell flex items-center justify-between gap-2 py-3 min-w-0 sm:gap-3;
   }
   .app-main {
-    @apply app-shell flex-1 py-6 pb-24 sm:pb-8;
+    @apply app-shell flex-1 py-6;
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+  }
+  @screen sm {
+    .app-main {
+      padding-bottom: 2rem;
+    }
   }
   .app-footer-inner {
     @apply app-shell py-4 text-xs text-slate-500 space-y-2;
   }
   .site-logo {
-    @apply font-bold text-xl sm:text-2xl tracking-tight text-emerald-400 shrink-0;
+    @apply min-w-0 font-bold text-lg sm:text-2xl tracking-tight text-emerald-400 truncate;
   }
   .safe-top {
     padding-top: env(safe-area-inset-top);
@@ -51,7 +57,7 @@
   }
   .btn-nav-group {
     @apply grid grid-cols-2 gap-1.5 shrink-0;
-    width: min(12.75rem, 46vw);
+    width: min(11.5rem, 42vw);
   }
   @screen sm {
     .btn-nav-group {
@@ -60,7 +66,7 @@
     }
   }
   .btn-nav {
-    @apply inline-flex items-center justify-center gap-1.5 w-full min-w-0 min-h-[44px] py-2 px-2 text-sm leading-tight whitespace-nowrap;
+    @apply inline-flex items-center justify-center gap-1 w-full min-w-0 min-h-[44px] py-2 px-1.5 text-xs sm:text-sm leading-tight sm:gap-1.5 sm:px-2;
   }
   .btn-nav-icon {
     @apply w-4 h-4 shrink-0 block;
@@ -69,10 +75,10 @@
     @apply inline-flex items-center justify-center w-4 h-4 shrink-0 text-lg font-bold leading-none;
   }
   .btn-nav-wide {
-    @apply flex w-full items-center justify-center gap-2 py-3 px-5 text-base leading-tight;
+    @apply flex w-full min-h-[44px] items-center justify-center gap-2 py-3 px-5 text-base leading-tight;
   }
   .host-action-btn {
-    @apply inline-flex items-center justify-center rounded-lg px-3 py-2 min-h-[44px] text-xs font-semibold leading-tight border cursor-pointer whitespace-nowrap;
+    @apply inline-flex items-center justify-center rounded-lg px-3 py-2 min-h-[44px] text-xs font-semibold leading-tight border cursor-pointer;
   }
   .ownership-participant-row {
     @apply flex flex-col gap-3 py-3 border-b border-slate-800 last:border-0 sm:flex-row sm:items-start sm:justify-between sm:gap-4;
@@ -133,9 +139,18 @@
   .landing-demo-content input[readonly] {
     @apply opacity-80;
   }
+  .host-code-row {
+    @apply flex items-center justify-center gap-2;
+  }
   .host-code-display {
-    @apply text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono;
-    letter-spacing: 0.25em;
+    @apply break-all text-2xl font-extrabold text-emerald-400 font-mono sm:text-3xl;
+    letter-spacing: 0.2em;
+  }
+  .host-code-copy-btn {
+    @apply inline-flex h-11 w-11 min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg border border-slate-600 bg-slate-800 text-slate-300 transition-colors hover:border-emerald-500/50 hover:text-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500;
+  }
+  .host-code-copy-icon {
+    @apply block shrink-0;
   }
   @screen sm {
     .host-code-display {
@@ -152,7 +167,7 @@
     @apply inline-flex shrink-0 rounded-lg border border-slate-700 bg-slate-800/80 p-0.5;
   }
   .join-status-toggle-btn {
-    @apply flex-1 basis-0 min-w-[4.25rem] rounded-md px-2 py-1 text-xs font-semibold uppercase tracking-wide text-center border border-transparent cursor-pointer transition-colors text-slate-400 bg-transparent;
+    @apply flex-1 basis-0 min-h-[44px] min-w-[4.25rem] rounded-md px-2 py-2 text-xs font-semibold uppercase tracking-wide text-center border border-transparent cursor-pointer transition-colors text-slate-400 bg-transparent;
   }
   .join-status-toggle-btn-open.is-active {
     @apply bg-emerald-500/15 text-emerald-300 border-emerald-500/40 cursor-default;
@@ -218,7 +233,7 @@
     @apply text-xs text-slate-400 leading-snug;
   }
   .btn-add-leg {
-    @apply inline-flex items-center gap-1 px-3.5 py-2 rounded-lg text-sm font-semibold text-slate-950 bg-emerald-400 hover:bg-emerald-300 transition-colors cursor-pointer border-0;
+    @apply inline-flex min-h-[44px] items-center gap-1 rounded-lg border-0 px-3.5 py-2 text-sm font-semibold text-slate-950 bg-emerald-400 transition-colors cursor-pointer hover:bg-emerald-300;
   }
   .legs-list .leg-row {
     @apply pt-4 pb-3 space-y-2;
@@ -230,7 +245,7 @@
     @apply border-t border-slate-700 mt-1;
   }
   .btn-remove-leg {
-    @apply text-xs font-semibold text-red-300 bg-red-500/10 border border-red-400/50 px-2.5 py-1 rounded-md cursor-pointer transition-colors;
+    @apply min-h-[44px] rounded-md border border-red-400/50 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300 cursor-pointer transition-colors;
   }
   .btn-remove-leg:hover {
     @apply text-red-50 bg-red-500/35 border-red-400;
@@ -329,6 +344,8 @@
   }
   .collapse-toggle:focus {
     outline: none;
+  }
+  .collapse-toggle:focus-visible {
     box-shadow: 0 0 0 1px #10b981;
     border-radius: 0.5rem;
   }
@@ -352,6 +369,41 @@
   }
   .collapse-panel {
     @apply mt-4 border-t border-slate-800 pt-4;
+  }
+  .payout-box-label {
+    @apply mb-2 font-medium uppercase tracking-wide text-slate-400;
+    font-size: clamp(0.75rem, 1.8vw, 0.8125rem);
+  }
+  .payout-box-amount {
+    @apply font-extrabold leading-none text-emerald-400 tabular-nums;
+    font-size: clamp(2.25rem, 7.5vw, 3.125rem);
+  }
+  .form-grid-2 {
+    @apply grid grid-cols-1 gap-4;
+  }
+  @screen sm {
+    .form-grid-2 {
+      @apply grid-cols-2;
+    }
+  }
+  .page-heading {
+    @apply text-2xl font-bold tracking-tight sm:text-3xl;
+  }
+  .page-lead {
+    @apply text-sm leading-relaxed text-slate-400 sm:text-base;
+  }
+  .hint-line {
+    @apply text-xs leading-snug text-slate-400;
+  }
+  .ownership-panel-header {
+    @apply mb-3 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between;
+  }
+  .legs-section-header {
+    @apply mb-3 flex flex-wrap items-center justify-between gap-2;
+  }
+  .break-anywhere {
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
   .hidden {
     display: none !important;

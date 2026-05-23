@@ -224,27 +224,71 @@
 
 
 
-  function sanitizeOddsInput(value) {
+  function formatAmericanOddsLive(str) {
 
-    let s = String(value).replace(/[^\d+-]/g, "");
+    let s = String(str).replace(/[^\d+-]/g, "");
 
-    if (s.includes("-")) {
+    if (!s) return "";
 
-      const digits = s.replace(/-/g, "");
+    const digits = s.replace(/[^\d]/g, "");
 
-      return digits ? "-" + digits : "-";
+    const negative = s.includes("-");
 
-    }
+    if (!digits) {
 
-    if (s.includes("+")) {
-
-      const digits = s.replace(/\+/g, "");
-
-      return digits ? "+" + digits : "+";
+      return negative ? "-" : s.includes("+") ? "+" : "";
 
     }
 
-    return s.replace(/[+-]/g, "");
+    if (negative) {
+
+      return "-" + digits;
+
+    }
+
+    return "+" + digits;
+
+  }
+
+
+
+  function formatAmericanOddsBlur(el) {
+
+    el.value = formatAmericanOddsLive(el.value);
+
+  }
+
+
+
+  function bindOddsField(el, root) {
+
+    if (!el || el._oddsBound) return;
+
+    el._oddsBound = true;
+
+
+
+    el.addEventListener("input", () => updatePayout(root));
+
+    el.addEventListener("blur", () => {
+
+      formatAmericanOddsBlur(el);
+
+      updatePayout(root);
+
+    });
+
+    el.addEventListener("change", () => {
+
+      formatAmericanOddsBlur(el);
+
+      updatePayout(root);
+
+    });
+
+
+
+    if (el.value) formatAmericanOddsBlur(el);
 
   }
 
@@ -448,17 +492,13 @@
 
 
 
-    const applyLive = () => {
+    el.addEventListener("input", () => {
 
-      const formatted = formatContributionLive(el.value);
+      const raw = String(el.value).replace(/[^\d.,$]/g, "");
 
-      if (formatted !== el.value) el.value = formatted;
+      if (raw !== el.value) el.value = raw;
 
-    };
-
-
-
-    el.addEventListener("input", applyLive);
+    });
 
     el.addEventListener("blur", () => formatContributionBlur(el));
 
@@ -550,13 +590,21 @@
 
   function saveJoinDraft(form) {
 
-    const nickname = form.querySelector('[name="nickname"]')?.value ?? "";
+    const nickname = (form.querySelector('[name="nickname"]')?.value ?? "").trim();
 
     const contribution = form.querySelector('[name="contribution_amount"]')?.value ?? "";
 
     if (!nickname && !contribution) {
 
-      sessionStorage.removeItem(joinDraftKey(form));
+      try {
+
+        sessionStorage.removeItem(joinDraftKey(form));
+
+      } catch (_err) {
+
+        /* private mode */
+
+      }
 
       setOwnershipPollPaused(false);
 
@@ -564,13 +612,21 @@
 
     }
 
-    sessionStorage.setItem(
+    try {
 
-      joinDraftKey(form),
+      sessionStorage.setItem(
 
-      JSON.stringify({ nickname, contribution }),
+        joinDraftKey(form),
 
-    );
+        JSON.stringify({ nickname, contribution }),
+
+      );
+
+    } catch (_err) {
+
+      return;
+
+    }
 
     setOwnershipPollPaused(true);
 
@@ -702,6 +758,12 @@
 
 
 
+  let footerRefreshTimer = null;
+
+  let footerRefreshInFlight = false;
+
+
+
   function maybeRefreshJoinFooter() {
 
     const sync = document.getElementById("ownership-sync");
@@ -718,6 +780,26 @@
 
     if (rev === prev) return;
 
+    if (footerRefreshTimer) clearTimeout(footerRefreshTimer);
+
+    footerRefreshTimer = setTimeout(() => {
+
+      footerRefreshTimer = null;
+
+      runJoinFooterRefresh(sync, rev, storageKey, prev);
+
+    }, 120);
+
+  }
+
+
+
+  function runJoinFooterRefresh(sync, rev, storageKey, prev) {
+
+    if (rev === sessionStorage.getItem(storageKey)) return;
+
+    if (footerRefreshInFlight) return;
+
     const form = document.querySelector("[data-join-form]");
 
     const draft = form && readJoinDraft(form);
@@ -730,7 +812,15 @@
 
     if (draft && wasJoin && approvedNow) clearJoinDraft(form);
 
-    sessionStorage.setItem(storageKey, rev);
+    try {
+
+      sessionStorage.setItem(storageKey, rev);
+
+    } catch (_err) {
+
+      /* ignore */
+
+    }
 
     const url = sync.dataset.joinFooterUrl;
 
@@ -738,7 +828,7 @@
 
     const keepDraft = draft && wasJoin && !approvedNow;
 
-
+    footerRefreshInFlight = true;
 
     htmx.ajax("GET", url, { target: "#ownership-footer", swap: "outerHTML" }).then(() => {
 
@@ -749,6 +839,10 @@
         else initJoinForm(f);
 
       });
+
+    }).finally(() => {
+
+      footerRefreshInFlight = false;
 
     });
 
@@ -960,9 +1054,13 @@
 
   function formatInitialFields(root) {
 
+    const odds = root.querySelector('[name="odds_american"]');
+
     const wager = root.querySelector('[name="wager_amount"]');
 
     const split = root.querySelector('[name="split_offered_percent"]');
+
+    if (odds && odds.value) formatAmericanOddsBlur(odds);
 
     if (wager) {
 
@@ -1198,6 +1296,8 @@
 
 
 
+    bindOddsField(odds, root);
+
     bindWagerField(wager, root);
 
     bindSplitField(split, root);
@@ -1205,22 +1305,6 @@
     initSplitSliders(root);
 
     bindFormSubmit(root);
-
-
-
-    if (odds && !odds._oddsBound) {
-
-      odds._oddsBound = true;
-
-      odds.addEventListener("input", () => {
-
-        odds.value = sanitizeOddsInput(odds.value);
-
-        updatePayout(root);
-
-      });
-
-    }
 
 
 

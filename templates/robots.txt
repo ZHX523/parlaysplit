@@ -2,5 +2,9 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 Disallow: /media/
+Disallow: /host/
+Disallow: /ocr/
+Disallow: /p/*/creator/
+Disallow: /p/*/copy/
 
 Sitemap: {{ site_url }}/sitemap.xml

@@ -632,7 +632,9 @@ class ParticipantJoinForm(forms.ModelForm):
 
                     raise ValidationError(
 
-                        f"Only {format_dollars(remaining)} more is available on the friends split."
+                        f"Maximum contribution is {format_dollars(max_total)} "
+
+                        f"({format_dollars(remaining)} more than your current share)."
 
                     )
 

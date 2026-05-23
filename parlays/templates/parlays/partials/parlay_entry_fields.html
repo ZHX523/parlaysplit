@@ -52,7 +52,7 @@
   {% include "parlays/partials/parlay_payout_box.html" with live=True payout_amount=form.instance.potential_payout %}
 
   <div>
-    <label class="label" for="{{ form.split_offered_percent.id_for_label }}">Split offered (%) — Decide how much of this parlay friends can join.</label>
+    <label class="label break-anywhere" for="{{ form.split_offered_percent.id_for_label }}">Split offered (%) — Decide how much of this parlay friends can join.</label>
     <input type="text"
            name="split_offered_percent"
            id="{{ form.split_offered_percent.id_for_label }}"
@@ -83,7 +83,7 @@
   </div>
 
   <div>
-    <div class="flex items-center justify-between mb-3">
+    <div class="legs-section-header">
       <span class="label mb-0">Parlay legs</span>
       <button type="button" class="btn-add-leg" data-add-leg>
         + Add Leg

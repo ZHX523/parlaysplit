@@ -11,10 +11,6 @@ from django.urls import reverse
 
 from django.views.decorators.http import require_GET, require_http_methods
 
-from meta.views import Meta
-
-
-
 from .forms import (
 
     BetSlipLinkForm,
@@ -47,11 +43,10 @@ from .services.link_parser import parse_bet_slip_link
 
 from .services.ocr import OCRService
 
+from .opengraph import render_parlay_og_svg
+from .services.og_image import get_parlay_og_etag, get_parlay_og_image_bytes
+from .seo import build_page_meta, build_parlay_page_meta
 from .tasks import process_ocr_upload
-
-from .utils import format_dollars
-
-
 
 SUBMISSION_MANUAL = "manual"
 
@@ -75,33 +70,10 @@ def _parlay_page_url(parlay, *, is_host_view: bool) -> str:
 
 
 def landing(request):
-
-    meta = Meta(
-
-        request=request,
-
-        title="ParlaySplit — Coordinate group parlays without spreadsheet math",
-
-        description=(
-
-            "Share betting slips, track participation, and estimate payouts with friends. "
-
-            "No wagers accepted — coordination only."
-
-        ),
-
-        url=request.build_absolute_uri(),
-
-    )
-
     return render(
-
         request,
-
         "parlays/landing.html",
-
-        {"meta": meta},
-
+        {"meta": build_page_meta(request, "landing")},
     )
 
 
@@ -356,48 +328,22 @@ def create_parlay(request):
 
 
 
-    meta = Meta(
-
-        request=request,
-
-        title="Create your Parlay — ParlaySplit",
-
-        description="Choose how you want to submit your bet!",
-
-    )
-
     return render(
-
         request,
-
         "parlays/create.html",
-
         {
-
             "form": form,
-
             "manual_form": manual_form,
-
             "ocr_form": ocr_form,
-
             "link_form": link_form,
-
             "ocr_upload": ocr_upload,
-
             "submission_method": method,
-
             "show_review": show_review,
-
             "external_link": external_link,
-
             "leg_type_choices": LegType.choices,
-
             "max_legs": settings.MAX_LEGS,
-
-            "meta": meta,
-
+            "meta": build_page_meta(request, "create"),
         },
-
     )
 
 
@@ -670,23 +616,9 @@ def _render_parlay_page(request, parlay, *, is_host_view: bool):
 
 
 
-    meta = Meta(
-
-        request=request,
-
-        title=f"Parlay by {parlay.creator_nickname} — ParlaySplit",
-
-        description=_parlay_meta_description(parlay),
-
-        url=request.build_absolute_uri(),
-
-    )
-
-
-
     ctx = _parlay_context(request, parlay, join_form, is_host_view=is_host_view)
 
-    ctx["meta"] = meta
+    ctx["meta"] = build_parlay_page_meta(request, parlay, is_host_view=is_host_view)
 
     ctx["page_url"] = page_url
 
@@ -1034,29 +966,36 @@ def _parlay_context(
 
 
 
-def _parlay_meta_description(parlay) -> str:
-
-    legs = parlay.legs.count()
-
-    odds = (
-
-        f"+{parlay.odds_american}"
-
-        if parlay.odds_american and parlay.odds_american > 0
-
-        else str(parlay.odds_american or "")
-
+@require_GET
+def parlay_og_image(request, pk):
+    parlay = get_object_or_404(
+        Parlay.objects.prefetch_related("legs", "participants"),
+        pk=pk,
     )
+    if not parlay.is_public:
+        raise Http404()
 
-    payout = format_dollars(parlay.potential_payout) if parlay.potential_payout else "TBD"
+    fmt = (request.GET.get("format") or "png").lower()
+    if fmt == "svg":
+        return HttpResponse(
+            render_parlay_og_svg(parlay),
+            content_type="image/svg+xml",
+        )
 
-    return (
+    etag = get_parlay_og_etag(parlay)
+    timeout = getattr(settings, "OG_IMAGE_CACHE_TIMEOUT", 86400)
+    cache_control = f"public, max-age={timeout}, stale-while-revalidate=3600"
 
-        f"{legs}-leg parlay · {odds} · est. payout {payout}. "
+    if request.META.get("HTTP_IF_NONE_MATCH") == etag:
+        response = HttpResponse(status=304)
+    else:
+        png_bytes = get_parlay_og_image_bytes(parlay)
+        response = HttpResponse(png_bytes, content_type="image/png")
+        response["ETag"] = etag
 
-        f"Join {parlay.creator_nickname}'s group on ParlaySplit."
-
-    )
+    response["Cache-Control"] = cache_control
+    response["X-Robots-Tag"] = "noindex"
+    return response
 
 
 
@@ -1110,7 +1049,11 @@ def host_lookup(request):
     return render(
         request,
         "parlays/host_lookup.html",
-        {"error": error, "submitted_code": submitted_code},
+        {
+            "error": error,
+            "submitted_code": submitted_code,
+            "meta": build_page_meta(request, "host_lookup"),
+        },
     )
 
 

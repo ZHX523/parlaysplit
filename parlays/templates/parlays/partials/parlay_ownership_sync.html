@@ -10,7 +10,7 @@
      hx-swap="outerHTML"
      hx-boost="false"
      {% endif %}>
-  <div class="flex justify-between items-center mb-3 gap-2">
+  <div class="ownership-panel-header">
     <h2 class="font-semibold text-sm text-slate-300">Ownership split</h2>
     {% if is_creator %}
     <form method="post" class="join-status-toggle" role="group" aria-label="New join requests">
@@ -36,7 +36,7 @@
     <span class="status-badge status-closed">CLOSED</span>
     {% endif %}
   </div>
-  <p class="text-xs text-slate-400 whitespace-nowrap mb-3">Based on {{ parlay.wager_amount|currency }} wager</p>
+  <p class="hint-line mb-3">Based on {{ parlay.wager_amount|currency }} wager</p>
 
   {% if ownership_action_error %}
   <p class="text-red-400 text-sm mb-3">{{ ownership_action_error }}</p>
@@ -65,7 +65,7 @@
             {% endif %}
           </span>
         </p>
-        <p class="text-xs text-slate-400 whitespace-nowrap ml-5">
+        <p class="text-xs text-slate-400 hint-line ml-5">
           {% if row.is_host %}
           {{ row.contribution|currency }} of {{ parlay.wager_amount|currency }} wager
           {% elif row.is_pending %}
@@ -81,7 +81,7 @@
         {% elif row.ownership is not None %}
         <p style="color: {{ row.color }};" class="font-semibold">{{ row.ownership }}%</p>
         {% if row.estimated %}
-        <p class="text-xs text-slate-400 whitespace-nowrap">~ Payout {{ row.estimated|currency }}</p>
+        <p class="text-xs text-slate-400 hint-line">~ Payout {{ row.estimated|currency }}</p>
         {% endif %}
         {% else %}—{% endif %}
 
@@ -129,7 +129,7 @@
     <span class="min-w-0"></span>
     {% endif %}
     {% if remaining_wager > 0 %}
-    <p class="text-slate-400 font-medium whitespace-nowrap shrink-0">{{ remaining_wager|currency }} still available!</p>
+    <p class="text-slate-400 font-medium hint-line shrink-0">{{ remaining_wager|currency }} still available!</p>
     {% endif %}
   </div>
   {% endif %}
@@ -145,8 +145,8 @@
   {% elif not show_join_form and parlay.status == "open" %}
   {% if is_creator %}
   <p class="text-sm text-slate-100 border-t border-slate-800 pt-4">
-    Friends ({{ parlay.approved_participant_count }}) joined your parlay!
-    {{ total_contributions|currency }} claimed of your {{ parlay.max_friends_stake|currency }} split!
+    Friends <span class="font-bold text-emerald-400">({{ parlay.approved_participant_count }})</span> joined your parlay!
+    <span class="font-bold text-red-400">{{ total_contributions|currency }}</span> claimed of your <span class="font-bold text-emerald-400">{{ parlay.max_friends_stake|currency }}</span> split!
   </p>
   {% else %}
   <p class="text-sm text-amber-300 border-t border-slate-800 pt-4">
@@ -162,7 +162,7 @@
   {% if show_join_form %}
   <p class="text-sm font-medium text-emerald-400 border-t border-slate-800 pt-4">
     {% if user_approved_participant %}
-    You are locked in for {{ user_approved_participant.contribution_amount|currency }}! Request a higher contribution.
+    You are locked in for {{ user_approved_participant.contribution_amount|currency }}! Refresh the page to request a higher contribution.
     {% else %}
     Join Parlay!
     {% endif %}

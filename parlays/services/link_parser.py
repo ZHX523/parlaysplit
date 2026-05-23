@@ -33,6 +33,18 @@ def is_supported_bet_link(url: str) -> bool:
     return False
 
 
+def sportsbook_display_name(url: str = "") -> str:
+    """Human-readable sportsbook label for share previews."""
+    if not url or not str(url).strip():
+        return "Parlay"
+    host = (urlparse(url.strip()).netloc or "").lower().removeprefix("www.")
+    if any(host == h or host.endswith("." + h) for h in FANDUEL_HOSTS):
+        return "FanDuel"
+    if any(host == h or host.endswith("." + h) for h in DRAFTKINGS_HOSTS):
+        return "DraftKings"
+    return "Sportsbook"
+
+
 def parse_bet_slip_link(url: str) -> dict:
     """Extract coordination fields from a shared bet URL."""
     url = url.strip()

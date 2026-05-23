@@ -1,6 +1,6 @@
 {% load parlay_extras %}
 <header>
-  <h1 class="text-2xl font-bold mt-1">{{ parlay.creator_nickname }}'s Parlay</h1>
+  <h1 class="page-heading mt-1 break-anywhere">{{ parlay.creator_nickname }}'s Parlay</h1>
   <div class="flex flex-wrap gap-3 mt-3 text-sm">
     {% if parlay.odds_american %}
     <span class="badge">Odds {% if parlay.odds_american > 0 %}+{% endif %}{{ parlay.odds_american }}</span>
@@ -21,7 +21,7 @@
     {% for leg in parlay.legs.all %}
     <li>
       <span class="parlay-leg-type">{{ leg.get_leg_type_display }} ·</span>
-      {{ leg.description }}
+      <span class="break-anywhere">{{ leg.description }}</span>
     </li>
     {% endfor %}
   </ol>

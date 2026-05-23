@@ -4,14 +4,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  {% include "meta/meta.html" %}
+  {% include "seo/head.html" %}
   <meta name="theme-color" content="#0f172a">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
-  <link rel="stylesheet" href="{% static 'css/output.css' %}?v=20">
-  <script src="{% static 'js/parlay-form.js' %}?v=15"></script>
+  <link rel="stylesheet" href="{% static 'css/output.css' %}?v=26">
+  <script src="{% static 'js/parlay-form.js' %}?v=17"></script>
   <script defer src="https://unpkg.com/alpinejs@3.14.3/dist/cdn.min.js"></script>
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
   {% if plausible_domain %}
@@ -49,9 +49,9 @@
   </main>
 
   <footer class="border-t border-slate-800 bg-slate-900/50 safe-bottom mt-auto">
-    <div class="app-footer-inner">
+    <div class="app-footer-inner space-y-4">
       {% for disclaimer in legal_disclaimers %}
-      <p>{{ disclaimer }}</p>
+      <p class="text-xs text-slate-500">{{ disclaimer }}</p>
       {% endfor %}
     </div>
   </footer>

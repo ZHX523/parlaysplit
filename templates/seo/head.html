@@ -1,0 +1,11 @@
+{% load meta %}
+{# Reusable SEO head partial — requires ``meta`` (django-meta Meta instance) in context. #}
+{% if meta %}
+  {% include "meta/meta.html" %}
+  {% if meta.url %}
+  <link rel="canonical" href="{{ meta.url }}">
+  {% endif %}
+{% else %}
+  <title>{{ seo_fallback_title|default:"Coordinate Group Parlays | ParlaySplit" }}</title>
+  <meta name="description" content="{{ seo_fallback_description|default:'Share sportsbook parlays, track participation, and estimate payouts with friends.' }}">
+{% endif %}

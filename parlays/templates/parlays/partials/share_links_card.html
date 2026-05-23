@@ -2,11 +2,19 @@
 <section class="card mt-6 {% if show_host_code %}border-emerald-500/30 bg-emerald-500/5{% endif %}"
          x-data="{
            copied: false,
+           hostCodeCopied: false,
            shareUrl: '{{ public_share_url|escapejs }}',
+           hostCode: '{{ host_code|default:''|escapejs }}',
            async copyLink() {
              await navigator.clipboard.writeText(this.shareUrl);
              this.copied = true;
              setTimeout(() => { this.copied = false; }, 2000);
+           },
+           async copyHostCode() {
+             if (!this.hostCode) return;
+             await navigator.clipboard.writeText(this.hostCode);
+             this.hostCodeCopied = true;
+             setTimeout(() => { this.hostCodeCopied = false; }, 2000);
            },
            async shareLink() {
              if (navigator.share) {
@@ -29,9 +37,9 @@
   {% else %}
   <h2 class="font-semibold text-sm text-slate-300 mb-3">Invite Friends 🔗</h2>
   {% if show_host_code %}
-  <p class="text-xs text-slate-400 whitespace-nowrap mb-4">Send the public link below — friends join there. Only you should use this host page.</p>
+  <p class="hint-line mb-4">Send the public link below — friends join there. Only you should use this host page.</p>
   {% else %}
-  <p class="text-xs text-slate-400 whitespace-nowrap mb-4">Share this link so others can request to join the parlay.</p>
+  <p class="hint-line mb-4">Share this link so others can request to join the parlay.</p>
   {% endif %}
   {% endif %}
 
@@ -55,8 +63,18 @@
     {% if show_host_code and host_code %}
     <div class="rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-4 text-center">
       <p class="text-xs text-slate-500 uppercase tracking-wide mb-1">Your host code</p>
-      <p class="host-code-display">{{ host_code }}</p>
-      <p class="text-xs text-slate-500 mt-2">Save this code to find your parlay later.</p>
+      <div class="host-code-row">
+        <p class="host-code-display mb-0">{{ host_code }}</p>
+        <button type="button"
+                class="host-code-copy-btn"
+                @click="copyHostCode()"
+                :title="hostCodeCopied ? 'Copied!' : 'Copy host code'"
+                :aria-label="hostCodeCopied ? 'Host code copied' : 'Copy host code'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="host-code-copy-icon" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+        </button>
+      </div>
+      <p class="text-xs text-emerald-400 mt-2" x-show="hostCodeCopied" x-cloak>Copied!</p>
+      <p class="text-xs text-slate-500 mt-2" x-show="!hostCodeCopied">Save this code to find your parlay later.</p>
     </div>
     {% endif %}
   </div>
