@@ -176,7 +176,7 @@ MAX_LEGS = 20
 
 # Host lookup code (alphanumeric) — cleared automatically after TTL
 HOST_CODE_LENGTH = config("HOST_CODE_LENGTH", default=6, cast=int)
-HOST_CODE_TTL_HOURS = config("HOST_CODE_TTL_HOURS", default=48, cast=int)
+HOST_CODE_TTL_HOURS = config("HOST_CODE_TTL_HOURS", default=72, cast=int)
 HOST_CODE_CHARSET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # omit 0/O, 1/I/L for readability
 
 if not DEBUG:

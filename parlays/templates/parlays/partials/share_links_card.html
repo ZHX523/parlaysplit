@@ -19,7 +19,7 @@
          }">
   {% if show_share_intro %}
   <p class="text-sm font-semibold text-emerald-400 mb-1">Parlay created</p>
-  <p class="text-xs text-slate-500 mb-4">Copy the <strong class="text-slate-300 font-medium">public link</strong> for friends to join. Bookmark this host page to approve requests and edit your parlay. Your host code expires 48 hours after creation.</p>
+  <p class="text-xs text-slate-500 mb-4">Copy the <strong class="text-slate-300 font-medium">public link</strong> for friends to join. Bookmark this host page to manage your parlay. This parlay (public link and host code) expires {{ host_code_ttl_hours }} hours after creation.</p>
   {% else %}
   <h2 class="font-semibold text-sm text-slate-300 mb-3">Invite Friends 🔗</h2>
   {% if show_host_code %}
@@ -60,7 +60,7 @@
         </button>
       </div>
       <p class="text-xs text-emerald-400 mt-2" x-show="hostCodeCopied" x-cloak>Copied!</p>
-      <p class="text-xs text-slate-500 mt-2" x-show="!hostCodeCopied">Save this code to find your parlay later (expires in 48 hours).</p>
+      <p class="text-xs text-slate-500 mt-2" x-show="!hostCodeCopied">Save this code to find your parlay later (parlay closes in {{ host_code_ttl_hours }} hours).</p>
     </div>
     {% endif %}
   </div>

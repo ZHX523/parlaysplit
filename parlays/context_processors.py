@@ -17,6 +17,7 @@ def site_settings(request):
         "site_url": settings.SITE_URL,
         "plausible_domain": settings.PLAUSIBLE_DOMAIN,
         "google_analytics_id": settings.GOOGLE_ANALYTICS_ID,
+        "host_code_ttl_hours": getattr(settings, "HOST_CODE_TTL_HOURS", 72),
         "site_name": SITE_NAME,
     }
 

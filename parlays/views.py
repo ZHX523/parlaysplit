@@ -60,6 +60,14 @@ SUBMISSION_SCREENSHOT = "screenshot"
 SUBMISSION_LINK = "link"
 
 
+def _require_active_parlay(parlay: Parlay) -> Parlay:
+    """Raise 404 when the parlay TTL has passed (public and host access)."""
+    parlay.clear_host_code_if_expired()
+    if parlay.is_expired:
+        raise Http404()
+    return parlay
+
+
 def _get_parlay_by_host_code(host_code: str) -> Parlay:
     clear_expired_host_codes()
     code = normalize_host_code(host_code)
@@ -69,9 +77,7 @@ def _get_parlay_by_host_code(host_code: str) -> Parlay:
         Parlay.objects.prefetch_related("legs", "participants"),
         host_code=code,
     )
-    if parlay.clear_host_code_if_expired():
-        raise Http404()
-    return parlay
+    return _require_active_parlay(parlay)
 
 
 def _redirect_after_parlay_create(request, parlay):
@@ -390,6 +396,7 @@ def ocr_status_partial(request, upload_id):
 
 
 def _render_parlay_page(request, parlay, *, is_host_view: bool):
+    _require_active_parlay(parlay)
 
     join_form = _join_form_for(request, parlay)
 
@@ -699,6 +706,8 @@ def parlay_detail(request, pk):
 
         raise Http404()
 
+    _require_active_parlay(parlay)
+
     return _render_parlay_page(request, parlay, is_host_view=False)
 
 
@@ -999,6 +1008,7 @@ def parlay_og_image(request, pk):
     )
     if not parlay.is_public:
         raise Http404()
+    _require_active_parlay(parlay)
 
     fmt = (request.GET.get("format") or "png").lower()
     if fmt == "svg":
@@ -1031,6 +1041,7 @@ def parlay_og_image(request, pk):
 def copy_link_fragment(request, pk):
 
     parlay = get_object_or_404(Parlay, pk=pk)
+    _require_active_parlay(parlay)
 
     return render(
 
@@ -1062,12 +1073,13 @@ def host_lookup(request):
         submitted_code = normalize_host_code(request.POST.get("host_code"))
         if is_valid_host_code_format(submitted_code):
             parlay = Parlay.objects.filter(host_code=submitted_code).first()
-            if parlay and not parlay.clear_host_code_if_expired() and parlay.host_code_active:
+            if parlay and not parlay.is_expired and parlay.host_code_active:
                 return redirect("parlays:host", host_code=parlay.host_code)
-            if parlay and not parlay.host_code:
+            if parlay and parlay.is_expired:
+                parlay.clear_host_code_if_expired()
                 error = (
-                    "This host code has expired. Codes are valid for "
-                    f"{getattr(settings, 'HOST_CODE_TTL_HOURS', 48)} hours after creation."
+                    "This parlay has expired. Parlays are available for "
+                    f"{getattr(settings, 'HOST_CODE_TTL_HOURS', 72)} hours after creation."
                 )
             else:
                 error = "No parlay found for that code. Check the code and try again."
@@ -1090,7 +1102,8 @@ def host_lookup(request):
 
 def set_creator_session(request, pk):
     parlay = get_object_or_404(Parlay, pk=pk)
-    if parlay.clear_host_code_if_expired() or not parlay.host_code_active:
+    _require_active_parlay(parlay)
+    if not parlay.host_code_active:
         raise Http404()
     request.session[f"creator_{parlay.id}"] = True
     return redirect("parlays:host", host_code=parlay.host_code)

@@ -37,13 +37,13 @@ def generate_host_code() -> str:
 
 
 def clear_expired_host_codes() -> int:
-    """Clear host codes past their expiry. Returns number of parlays updated."""
+    """Clear host codes for expired parlays (expiry timestamp is kept)."""
     now = timezone.now()
     expired = Parlay.objects.filter(
         host_code__isnull=False,
         host_code_expires_at__lt=now,
     )
-    return expired.update(host_code=None, host_code_expires_at=None)
+    return expired.update(host_code=None)
 
 
 def format_dollars(value) -> str:

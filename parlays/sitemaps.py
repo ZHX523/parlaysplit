@@ -4,6 +4,8 @@ from django.conf import settings
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
 
+from django.utils import timezone
+
 from parlays.models import Parlay
 
 
@@ -43,7 +45,11 @@ class PublicParlaySitemap(SiteUrlMixin, Sitemap):
     priority = 0.6
 
     def items(self):
-        return Parlay.objects.filter(is_public=True).order_by("-updated_at")
+        now = timezone.now()
+        return (
+            Parlay.objects.filter(is_public=True, host_code_expires_at__gt=now)
+            .order_by("-updated_at")
+        )
 
     def lastmod(self, obj):
         return obj.updated_at
