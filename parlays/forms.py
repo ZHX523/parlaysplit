@@ -99,7 +99,7 @@ class ParlayCreateForm(forms.ModelForm):
         ]
 
         widgets = {
-            "odds_american": forms.NumberInput(
+            "odds_american": forms.TextInput(
 
                 attrs={
 
@@ -107,23 +107,29 @@ class ParlayCreateForm(forms.ModelForm):
 
                     "placeholder": "+450",
 
-                    "step": "1",
+                    "inputmode": "numeric",
+
+                    "autocomplete": "off",
+
+                    "data-format-odds": "",
 
                 },
 
             ),
 
-            "wager_amount": forms.NumberInput(
+            "wager_amount": forms.TextInput(
 
                 attrs={
 
                     "class": "input-field",
 
-                    "placeholder": "25.00",
+                    "placeholder": "$100.00",
 
-                    "step": "0.01",
+                    "inputmode": "decimal",
 
-                    "min": "0.01",
+                    "autocomplete": "off",
+
+                    "data-format-wager": "",
 
                 },
 
@@ -172,13 +178,55 @@ class ParlayCreateForm(forms.ModelForm):
 
 
 
+    def clean_odds_american(self):
+
+        value = self.cleaned_data.get("odds_american")
+
+        if value is None or value == "":
+
+            raise ValidationError("American odds are required.")
+
+        if isinstance(value, str):
+
+            raw = value.strip()
+
+            if not raw or not raw.lstrip("+-").isdigit():
+
+                raise ValidationError("Enter whole-number American odds (e.g. +450 or -110).")
+
+            value = int(raw)
+
+        elif not isinstance(value, int):
+
+            raise ValidationError("Enter whole-number American odds (e.g. +450 or -110).")
+
+        if value == 0:
+
+            raise ValidationError("Odds cannot be zero.")
+
+        return value
+
+
+
     def clean_wager_amount(self):
 
-        value = self.cleaned_data.get("wager_amount")
+        raw = self.cleaned_data.get("wager_amount")
+
+        if raw is None or raw == "":
+
+            raise ValidationError("Wager is required.")
+
+        if isinstance(raw, Decimal):
+
+            value = raw
+
+        else:
+
+            value = parse_currency(raw)
 
         if value is None:
 
-            raise ValidationError("Wager is required.")
+            raise ValidationError("Enter a valid wager amount (numbers only).")
 
         if value < settings.MIN_CONTRIBUTION:
 

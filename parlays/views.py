@@ -452,6 +452,38 @@ def parlay_detail(request, pk):
 
         if action == "join":
 
+            if is_creator:
+
+                ownership_action_error = "Use your public share link for friends to join — you manage requests here."
+
+                join_form = _join_form_for(request, parlay)
+
+                if request.headers.get("HX-Request"):
+
+                    return render(
+
+                        request,
+
+                        "parlays/partials/parlay_ownership_inner.html",
+
+                        _parlay_context(
+
+                            request,
+
+                            parlay,
+
+                            join_form,
+
+                            ownership_action_error=ownership_action_error,
+
+                        ),
+
+                    )
+
+                return redirect("parlays:detail", pk=parlay.id)
+
+
+
             join_form = _join_form_for(request, parlay, data=request.POST)
 
             join_ok = join_form.is_valid()
@@ -791,7 +823,9 @@ def _parlay_context(request, parlay, join_form, ownership_action_error=None):
 
     show_join_form = (
 
-        parlay.status == ParlayStatus.OPEN
+        not is_creator
+
+        and parlay.status == ParlayStatus.OPEN
 
         and parlay.remaining_wager > 0
 

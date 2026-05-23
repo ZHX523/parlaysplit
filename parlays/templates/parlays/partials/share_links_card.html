@@ -1,5 +1,5 @@
-{# public_share_url, host_code, show_share_intro #}
-<section class="card mt-6 border-emerald-500/30 bg-emerald-500/5"
+{# public_share_url, show_share_intro, show_host_code, host_code #}
+<section class="card mt-6 {% if show_host_code %}border-emerald-500/30 bg-emerald-500/5{% endif %}"
          x-data="{
            copied: false,
            shareUrl: '{{ public_share_url|escapejs }}',
@@ -12,7 +12,7 @@
              if (navigator.share) {
                try {
                  await navigator.share({
-                   title: 'Join my parlay on ParlaySplit',
+                   title: 'Join this parlay on ParlaySplit',
                    url: this.shareUrl,
                  });
                  return;
@@ -25,32 +25,37 @@
          }">
   {% if show_share_intro %}
   <p class="text-sm font-semibold text-emerald-400 mb-1">Parlay created</p>
-  <p class="text-xs text-slate-500 mb-4">Share the link with friends. Keep your host code for yourself.</p>
+  <p class="text-xs text-slate-500 mb-4">Share the public link with friends. Keep your host code for yourself.</p>
   {% else %}
-  <h2 class="font-semibold text-sm text-slate-300 mb-3">Share</h2>
+  <h2 class="font-semibold text-sm text-slate-300 mb-3">{% if show_host_code %}Share{% else %}Invite friends{% endif %}</h2>
+  {% if not show_host_code %}
+  <p class="text-xs text-slate-500 mb-4">Share this link so others can request to join the parlay.</p>
+  {% endif %}
   {% endif %}
 
   <div class="space-y-4">
     <div>
-      <p class="label mb-1">Share link <span class="text-slate-600 font-normal normal-case">(friends join here)</span></p>
-      <div class="flex gap-2">
+      <p class="label mb-1">Public link <span class="text-slate-600 font-normal normal-case">(friends join here)</span></p>
+      <div class="share-link-row">
         <input type="text"
                readonly
                class="input-field text-sm flex-1 min-w-0"
                :value="shareUrl"
                aria-label="Public parlay link">
         <button type="button"
-                class="btn-primary shrink-0 px-4 py-2 text-sm"
+                class="btn-primary px-4 text-sm"
                 @click="shareLink()">
           <span x-text="copied ? 'Copied!' : 'Share'"></span>
         </button>
       </div>
     </div>
 
+    {% if show_host_code and host_code %}
     <div class="rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-4 text-center">
       <p class="text-xs text-slate-500 uppercase tracking-wide mb-1">Your host code</p>
-      <p class="text-3xl font-extrabold tracking-[0.35em] text-emerald-400 font-mono">{{ host_code }}</p>
+      <p class="host-code-display">{{ host_code }}</p>
       <p class="text-xs text-slate-500 mt-2">Save this code to find your parlay later.</p>
     </div>
+    {% endif %}
   </div>
 </section>

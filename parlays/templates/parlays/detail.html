@@ -16,11 +16,7 @@
 
 
 
-{% if is_creator %}
-
-  {% include "parlays/partials/share_links_card.html" with public_share_url=share_url host_code=host_code show_share_intro=show_share_intro %}
-
-{% endif %}
+{% include "parlays/partials/share_links_card.html" with public_share_url=share_url show_share_intro=show_share_intro show_host_code=is_creator host_code=host_code %}
 
 
 
@@ -94,26 +90,5 @@
 
 {% endif %}
 
-
-
-{% if not is_creator %}
-
-<section class="mt-6" x-data="{ copied: false }">
-
-  <button type="button"
-
-          class="btn-secondary w-full py-3"
-
-          @click="navigator.clipboard.writeText('{{ share_url }}'); copied = true; setTimeout(() => copied = false, 2000)">
-
-    <span x-text="copied ? 'Copied!' : 'Copy share link'"></span>
-
-  </button>
-
-</section>
-
-{% endif %}
-
 {% endblock %}
-
 

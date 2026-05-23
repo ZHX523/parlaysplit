@@ -6,11 +6,33 @@
 
 (function () {
 
+  function sanitizeWagerInput(value) {
+
+    let s = String(value).replace(/[^\d.]/g, "");
+
+    const dot = s.indexOf(".");
+
+    if (dot !== -1) {
+
+      s = s.slice(0, dot + 1) + s.slice(dot + 1).replace(/\./g, "");
+
+    }
+
+    return s;
+
+  }
+
+
+
   function parseWager(str) {
 
     if (str == null || str === "") return null;
 
-    const n = parseFloat(String(str).replace(/[$,\s]/g, ""));
+    const raw = sanitizeWagerInput(String(str).replace(/[$,\s]/g, ""));
+
+    if (!raw || !/^\d*\.?\d*$/.test(raw)) return null;
+
+    const n = parseFloat(raw);
 
     return Number.isFinite(n) && n > 0 ? n : null;
 
@@ -184,13 +206,57 @@
 
 
 
+  function parseAmericanOdds(str) {
+
+    if (str == null || str === "") return null;
+
+    const raw = String(str).trim();
+
+    if (!/^[-+]?\d+$/.test(raw)) return null;
+
+    const n = parseInt(raw, 10);
+
+    if (!Number.isFinite(n) || n === 0) return null;
+
+    return n;
+
+  }
+
+
+
+  function sanitizeOddsInput(value) {
+
+    let s = String(value).replace(/[^\d+-]/g, "");
+
+    if (s.includes("-")) {
+
+      const digits = s.replace(/-/g, "");
+
+      return digits ? "-" + digits : "-";
+
+    }
+
+    if (s.includes("+")) {
+
+      const digits = s.replace(/\+/g, "");
+
+      return digits ? "+" + digits : "+";
+
+    }
+
+    return s.replace(/[+-]/g, "");
+
+  }
+
+
+
   function calcPayout(wager, odds) {
 
     const w = typeof wager === "number" ? wager : parseWager(wager);
 
-    const o = parseInt(odds, 10);
+    const o = typeof odds === "number" ? odds : parseAmericanOdds(odds);
 
-    if (!w || w <= 0 || !o || o === 0 || Number.isNaN(o)) {
+    if (!w || w <= 0 || o == null) {
 
       return null;
 
@@ -286,7 +352,7 @@
 
       const n = parseWager(el.value);
 
-      if (n != null) el.value = n.toFixed(2);
+      if (n != null) el.value = sanitizeWagerInput(n.toFixed(2));
 
     });
 
@@ -296,7 +362,13 @@
 
 
 
-    if (onInput) el.addEventListener("input", onInput);
+    el.addEventListener("input", () => {
+
+      el.value = sanitizeWagerInput(el.value);
+
+      if (onInput) onInput();
+
+    });
 
   }
 
@@ -786,7 +858,13 @@
 
       odds._oddsBound = true;
 
-      odds.addEventListener("input", () => updatePayout(root));
+      odds.addEventListener("input", () => {
+
+        odds.value = sanitizeOddsInput(odds.value);
+
+        updatePayout(root);
+
+      });
 
     }
 
