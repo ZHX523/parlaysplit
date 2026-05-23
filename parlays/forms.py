@@ -351,8 +351,12 @@ class ParlayCreateForm(forms.ModelForm):
 
             )
 
+        self._after_save_legs(parlay)
 
+    def _after_save_legs(self, parlay: Parlay):
+        from .utils import assign_public_slug
 
+        assign_public_slug(parlay)
 
 
 class ParlayEditForm(ParlayCreateForm):
@@ -392,8 +396,10 @@ class ParlayEditForm(ParlayCreateForm):
 
             ] or default_legs_initial()
 
+    def _after_save_legs(self, parlay: Parlay):
+        from .utils import assign_public_slug
 
-
+        assign_public_slug(parlay, only_if_legacy=True)
 
 
 class ParticipantJoinForm(forms.ModelForm):

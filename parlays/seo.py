@@ -88,7 +88,7 @@ def page_url(request, view_name: str, *args, **kwargs) -> str:
 
 def parlay_public_url(request, parlay: Parlay) -> str:
     """Canonical URL for a parlay (always the public join link)."""
-    return page_url(request, "parlays:detail", pk=parlay.pk)
+    return page_url(request, "parlays:detail", slug=parlay.slug)
 
 
 def default_page_meta(request) -> Meta:

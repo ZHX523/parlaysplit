@@ -83,7 +83,7 @@ def parlay_opengraph_page_url(request, parlay: Parlay) -> str:
 
 
 def parlay_opengraph_image_url(request, parlay: Parlay) -> str:
-    path = reverse("parlays:og_image", kwargs={"pk": parlay.pk})
+    path = reverse("parlays:og_image", kwargs={"slug": parlay.slug})
     return absolute_url(request, path)
 
 

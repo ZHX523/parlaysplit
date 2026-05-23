@@ -60,7 +60,12 @@ class Parlay(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    slug = models.SlugField(max_length=12, unique=True, editable=False)
+    slug = models.SlugField(
+        max_length=96,
+        unique=True,
+        editable=False,
+        help_text="Public URL segment, e.g. jordan-parlay-3-legs-x7k2m9.",
+    )
     host_code = models.CharField(
         max_length=8,
         unique=True,
@@ -186,7 +191,7 @@ class Parlay(models.Model):
 
         ttl_hours = getattr(settings, "HOST_CODE_TTL_HOURS", 72)
         if not self.slug:
-            self.slug = uuid.uuid4().hex[:12]
+            self.slug = f"pending-{uuid.uuid4().hex[:10]}"
         if not self.host_code_expires_at:
             self.host_code_expires_at = timezone.now() + timedelta(hours=ttl_hours)
         if not self.host_code and not self.is_expired:
@@ -224,10 +229,13 @@ class Parlay(models.Model):
     def host_code_active(self) -> bool:
         return bool(self.host_code) and not self.is_expired
 
+    def get_absolute_url(self) -> str:
+        return f"/p/{self.slug}/"
+
     @property
     def share_url(self):
         """Public link for friends to view and join."""
-        return f"{settings.SITE_URL}/p/{self.id}/"
+        return f"{settings.SITE_URL}{self.get_absolute_url()}"
 
     @property
     def host_url(self):

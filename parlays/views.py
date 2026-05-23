@@ -93,7 +93,7 @@ def _redirect_after_parlay_create(request, parlay):
 def _parlay_page_url(parlay, *, is_host_view: bool) -> str:
     if is_host_view:
         return reverse("parlays:host", kwargs={"host_code": parlay.host_code})
-    return reverse("parlays:detail", kwargs={"pk": parlay.pk})
+    return reverse("parlays:detail", kwargs={"slug": parlay.slug})
 
 
 def landing(request):
@@ -690,25 +690,46 @@ def _render_parlay_page(request, parlay, *, is_host_view: bool):
 
 
 
-@require_http_methods(["GET", "POST"])
-
-def parlay_detail(request, pk):
-
+def _get_public_parlay_by_slug(slug: str) -> Parlay:
     parlay = get_object_or_404(
-
         Parlay.objects.prefetch_related("legs", "participants"),
-
-        pk=pk,
-
+        slug=slug,
     )
-
     if not parlay.is_public:
-
         raise Http404()
+    return _require_active_parlay(parlay)
 
-    _require_active_parlay(parlay)
+
+@require_http_methods(["GET", "POST"])
+def parlay_detail(request, slug):
+    parlay = _get_public_parlay_by_slug(slug)
 
     return _render_parlay_page(request, parlay, is_host_view=False)
+
+
+def _redirect_parlay_legacy(request, pk, view_name: str):
+    parlay = get_object_or_404(Parlay, pk=pk)
+    return redirect(view_name, slug=parlay.slug, permanent=True)
+
+
+@require_GET
+def parlay_legacy_redirect(request, pk):
+    return _redirect_parlay_legacy(request, pk, "parlays:detail")
+
+
+@require_GET
+def parlay_legacy_og_redirect(request, pk):
+    return _redirect_parlay_legacy(request, pk, "parlays:og_image")
+
+
+@require_GET
+def parlay_legacy_creator_redirect(request, pk):
+    return _redirect_parlay_legacy(request, pk, "parlays:set_creator")
+
+
+@require_GET
+def parlay_legacy_copy_redirect(request, pk):
+    return _redirect_parlay_legacy(request, pk, "parlays:copy_link")
 
 
 
@@ -1001,14 +1022,8 @@ def _parlay_context(
 
 
 @require_GET
-def parlay_og_image(request, pk):
-    parlay = get_object_or_404(
-        Parlay.objects.prefetch_related("legs", "participants"),
-        pk=pk,
-    )
-    if not parlay.is_public:
-        raise Http404()
-    _require_active_parlay(parlay)
+def parlay_og_image(request, slug):
+    parlay = _get_public_parlay_by_slug(slug)
 
     fmt = (request.GET.get("format") or "png").lower()
     if fmt == "svg":
@@ -1038,10 +1053,8 @@ def parlay_og_image(request, pk):
 
 @require_GET
 
-def copy_link_fragment(request, pk):
-
-    parlay = get_object_or_404(Parlay, pk=pk)
-    _require_active_parlay(parlay)
+def copy_link_fragment(request, slug):
+    parlay = _get_public_parlay_by_slug(slug)
 
     return render(
 
@@ -1100,9 +1113,8 @@ def host_lookup(request):
     )
 
 
-def set_creator_session(request, pk):
-    parlay = get_object_or_404(Parlay, pk=pk)
-    _require_active_parlay(parlay)
+def set_creator_session(request, slug):
+    parlay = _get_public_parlay_by_slug(slug)
     if not parlay.host_code_active:
         raise Http404()
     request.session[f"creator_{parlay.id}"] = True

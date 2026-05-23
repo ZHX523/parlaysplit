@@ -1,11 +1,15 @@
+import re
 import secrets
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
+from django.utils.text import slugify
 from django.utils import timezone
 
 from .models import Parlay
+
+_LEGACY_SLUG_RE = re.compile(r"^[0-9a-f]{12}$")
 
 DEFAULT_CREATOR_NICKNAME = "HOST"
 
@@ -34,6 +38,45 @@ def generate_host_code() -> str:
         if not Parlay.objects.filter(host_code=code).exists():
             return code
     raise RuntimeError("Could not allocate a unique host code.")
+
+
+def is_legacy_slug(slug: str) -> bool:
+    """True for old random hex slugs (not human-readable public URLs)."""
+    if not slug:
+        return True
+    if slug.startswith("pending-"):
+        return True
+    return bool(_LEGACY_SLUG_RE.match(slug))
+
+
+def build_public_slug(parlay: Parlay) -> str:
+    """
+  Human-readable path segment, e.g. jordan-parlay-3-legs-x7k2m9.
+  """
+    host = slugify(parlay.creator_nickname or "host") or "host"
+    host = host[:32].strip("-")
+    leg_count = parlay.legs.count() if parlay.pk else 0
+    max_len = getattr(settings, "PARLAY_SLUG_MAX_LENGTH", 96)
+
+    for _ in range(80):
+        suffix = secrets.token_hex(3)
+        candidate = f"{host}-parlay-{leg_count}-legs-{suffix}"
+        if len(candidate) > max_len:
+            candidate = candidate[:max_len].rstrip("-")
+        if not Parlay.objects.filter(slug=candidate).exclude(pk=parlay.pk).exists():
+            return candidate
+    raise RuntimeError("Could not allocate a unique public slug.")
+
+
+def assign_public_slug(parlay: Parlay, *, only_if_legacy: bool = False) -> str:
+    """Set slug from host name, leg count, and a short random suffix."""
+    if only_if_legacy and parlay.slug and not is_legacy_slug(parlay.slug):
+        return parlay.slug
+    new_slug = build_public_slug(parlay)
+    if parlay.slug != new_slug:
+        parlay.slug = new_slug
+        parlay.save(update_fields=["slug", "updated_at"])
+    return parlay.slug
 
 
 def clear_expired_host_codes() -> int:

@@ -55,4 +55,4 @@ class PublicParlaySitemap(SiteUrlMixin, Sitemap):
         return obj.updated_at
 
     def location(self, obj):
-        return reverse("parlays:detail", kwargs={"pk": obj.pk})
+        return reverse("parlays:detail", kwargs={"slug": obj.slug})
