@@ -161,7 +161,7 @@
     @apply bg-emerald-500/15 text-emerald-300 border-emerald-500/40;
   }
   .host-action-remove {
-    @apply bg-red-500/12 text-red-300 border-red-500/35;
+    @apply bg-red-500/10 text-red-300 border-red-500/35;
   }
   .join-status-toggle {
     @apply inline-flex shrink-0 rounded-lg border border-slate-700 bg-slate-800/80 p-0.5;
@@ -173,7 +173,7 @@
     @apply bg-emerald-500/15 text-emerald-300 border-emerald-500/40 cursor-default;
   }
   .join-status-toggle-btn-closed.is-active {
-    @apply bg-red-500/12 text-red-300 border-red-500/35 cursor-default;
+    @apply bg-red-500/10 text-red-300 border-red-500/35 cursor-default;
   }
   .join-status-toggle-btn.is-active:disabled {
     @apply opacity-100;
@@ -319,7 +319,7 @@
     @apply bg-emerald-500/15 text-emerald-300 border border-emerald-500/40;
   }
   .status-closed {
-    @apply bg-red-500/12 text-red-300 border border-red-500/35;
+    @apply bg-red-500/10 text-red-300 border border-red-500/35;
   }
   .status-pending {
     @apply bg-amber-500/15 text-amber-300 border border-amber-500/40;
