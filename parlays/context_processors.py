@@ -16,6 +16,7 @@ def site_settings(request):
     return {
         "site_url": settings.SITE_URL,
         "plausible_domain": settings.PLAUSIBLE_DOMAIN,
+        "google_analytics_id": settings.GOOGLE_ANALYTICS_ID,
         "site_name": SITE_NAME,
     }
 

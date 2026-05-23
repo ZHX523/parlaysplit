@@ -147,6 +147,7 @@ META_DEFAULT_KEYWORDS = ["parlay", "sports betting", "group bet", "coordination"
 META_IMAGE_URL = f"{SITE_URL}/static/img/og-card.svg"
 
 PLAUSIBLE_DOMAIN = config("PLAUSIBLE_DOMAIN", default="")
+GOOGLE_ANALYTICS_ID = config("GOOGLE_ANALYTICS_ID", default="G-0G7JZYHLCW")
 
 # OG preview image cache (versioned keys; TTL is a safety net)
 OG_IMAGE_CACHE_TIMEOUT = config("OG_IMAGE_CACHE_TIMEOUT", default=86400, cast=int)
