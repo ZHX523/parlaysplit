@@ -642,3 +642,42 @@ class OCRUpload(models.Model):
         self.save(update_fields=["status", "error_message", "processed_at"])
 
 
+class OCRScanFeedback(models.Model):
+    """
+    Compact OCR correction log (predicted vs submitted). Only material changes stored.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    ocr_upload = models.OneToOneField(
+        OCRUpload,
+        on_delete=models.CASCADE,
+        related_name="scan_feedback",
+    )
+    parlay = models.ForeignKey(
+        Parlay,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="ocr_scan_feedback",
+    )
+    parser_sportsbook = models.CharField(max_length=32, blank=True)
+    predicted_leg_count = models.PositiveSmallIntegerField(default=0)
+    submitted_leg_count = models.PositiveSmallIntegerField(default=0)
+    corrections = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text='Compact deltas only, e.g. {"f": {"odds_american": ["335","750"]}, "legs": [...]}.',
+    )
+    was_edited = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "OCR scan feedback"
+        verbose_name_plural = "OCR scan feedback"
+
+    def __str__(self):
+        flag = "edited" if self.was_edited else "ok"
+        return f"OCR feedback {self.ocr_upload_id} ({flag})"
+
+

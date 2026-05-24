@@ -2,7 +2,28 @@
 
 <p class="text-xs text-slate-500 mb-4">Edit anything the scan or link import missed, then create your shareable parlay.</p>
 
+<div class="flex justify-center mb-6">
+  <a href="{% url 'parlays:create' %}?method=screenshot&amp;discard_ocr=1"
+     class="btn-primary w-full max-w-xs text-center text-sm sm:text-base">
+    Use a Different Screenshot
+  </a>
+</div>
 
+{% if ocr_meta %}
+{% include "parlays/partials/ocr_extraction_summary.html" %}
+{% endif %}
+
+{% if ocr_meta %}
+<div class="ocr-review-callout rounded-xl border border-amber-700/35 bg-amber-950/20 px-4 py-3 mb-4" role="note">
+  <p class="text-sm text-slate-300 leading-relaxed">
+    Double-check your
+    <span class="ocr-review-keyword">odds</span>,
+    <span class="ocr-review-keyword">wager</span>, and
+    <span class="ocr-review-keyword">each leg</span>
+    against your screenshot. Fields with an amber border are what we scanned — confirm they match your slip.
+  </p>
+</div>
+{% endif %}
 
 {% if external_link %}
 
@@ -28,11 +49,13 @@
 
 
 
-  {% include "parlays/partials/parlay_entry_fields.html" with form=form %}
-
-
+  {% include "parlays/partials/parlay_entry_fields.html" with form=form leg_type_choices=leg_type_choices max_legs=max_legs ocr_uncertain_fields=ocr_meta.uncertain_fields ocr_review=True %}
 
   <button type="submit" class="btn-primary w-full">Create & Share Link</button>
 
 </form>
+
+{% if form.legs_initial %}
+{{ form.legs_initial|json_script:"ocr-legs-initial" }}
+{% endif %}
 

@@ -102,14 +102,23 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+
 STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "OPTIONS": {
+            "location": MEDIA_ROOT,
+            "base_url": MEDIA_URL,
+        },
+    },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
-
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
 
 USE_S3 = config("USE_S3", default=False, cast=bool)
 if USE_S3:
@@ -186,6 +195,14 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = config("CSRF_COOKIE_SECURE", default=True, cast=bool)
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# Path to tesseract binary (Windows: C:\Program Files\Tesseract-OCR\tesseract.exe)
+TESSERACT_CMD = config("TESSERACT_CMD", default="")
+
+# Lightweight OCR correction dataset (after screenshot review → create)
+OCR_FEEDBACK_ENABLED = config("OCR_FEEDBACK_ENABLED", default=True, cast=bool)
+OCR_FEEDBACK_STORE_UNCHANGED = config("OCR_FEEDBACK_STORE_UNCHANGED", default=False, cast=bool)
+OCR_FEEDBACK_MAX_LEG_CHARS = config("OCR_FEEDBACK_MAX_LEG_CHARS", default=200, cast=int)
 
 LOGGING = {
     "version": 1,

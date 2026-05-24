@@ -47,7 +47,7 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-xl bg-emerald-500 px-5 py-3 min-h-[44px] font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-transform;
+    @apply inline-flex items-center justify-center rounded-xl bg-emerald-500 px-5 py-3 min-h-[44px] font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 transition-[transform,background-color,box-shadow] hover:bg-emerald-400 hover:shadow-emerald-400/25 active:scale-[0.98];
   }
   .btn-secondary {
     @apply inline-flex items-center justify-center rounded-xl border border-slate-700 bg-slate-800 px-5 py-3 min-h-[44px] font-medium text-slate-100 active:scale-[0.98] transition-transform;
@@ -423,6 +423,19 @@
   }
   .hidden {
     display: none !important;
+  }
+  .ocr-review-keyword {
+    font-weight: 700;
+    color: #f59e0b;
+  }
+  .ocr-field-uncertain {
+    @apply border border-amber-500/60 ring-1 ring-amber-500/25;
+  }
+  .ocr-field-uncertain:focus {
+    @apply border-amber-400/70 ring-amber-500/30;
+  }
+  .ocr-leg-uncertain {
+    @apply border-l-2 border-amber-500/60 pl-2;
   }
 }
 

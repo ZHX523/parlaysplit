@@ -1,0 +1,34 @@
+{% if ocr_meta.confidence is not None or ocr_meta.legs_structured or ocr_meta.uncertain_fields %}
+<div class="rounded-lg border border-slate-700/80 bg-slate-900/50 p-3 mb-4 space-y-2">
+  <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Scan summary</p>
+  <dl class="text-sm space-y-1">
+    {% if ocr_meta.confidence is not None %}
+    <div class="flex justify-between gap-3">
+      <dt class="text-slate-500">Confidence</dt>
+      <dd class="text-right {% if ocr_meta.confidence < 0.5 %}text-amber-400{% else %}text-emerald-400{% endif %}">
+        {% widthratio ocr_meta.confidence 1 100 %}%
+      </dd>
+    </div>
+    {% endif %}
+  </dl>
+
+  {% if ocr_meta.legs_structured %}
+  <ul class="text-xs text-slate-400 space-y-2 mt-2 border-t border-slate-800 pt-2">
+    {% for leg in ocr_meta.legs_structured %}
+    <li class="{% if leg.uncertain_fields %}ocr-leg-uncertain{% endif %}">
+      <span class="text-slate-300">{{ leg.selection|default:"?" }}</span>
+      {% if leg.bet_type %} · {{ leg.bet_type }}{% if leg.line %} {{ leg.line }}{% endif %}{% endif %}
+      {% if leg.odds %} · <span class="text-slate-500">{{ leg.odds }}</span>{% endif %}
+      {% if leg.event %}<br><span class="text-slate-500">{{ leg.event }}</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if ocr_meta.uncertain_fields %}
+  <p class="text-xs text-amber-300/90 mt-2">
+    Low-confidence scan — pay extra attention to the highlighted fields below.
+  </p>
+  {% endif %}
+</div>
+{% endif %}

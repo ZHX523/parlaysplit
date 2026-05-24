@@ -46,7 +46,6 @@ from .services.ocr import OCRService
 from .opengraph import render_parlay_og_svg
 from .services.og_image import get_parlay_og_etag, get_parlay_og_image_bytes
 from .seo import build_page_meta, build_parlay_page_meta
-from .tasks import process_ocr_upload
 from .utils import (
     clear_expired_host_codes,
     is_valid_host_code_format,
@@ -107,23 +106,29 @@ def landing(request):
 
 
 
-def _review_initial_from_ocr(ocr_upload: OCRUpload) -> tuple[dict, list[dict]]:
+def _clear_ocr_session(request) -> None:
+    for key in ("last_ocr_upload_id", "pending_ocr_review_id", "ocr_review_token"):
+        request.session.pop(key, None)
+
+
+def _review_initial_from_ocr(ocr_upload: OCRUpload) -> tuple[dict, list[dict], dict]:
+    from .forms import legs_initial_from_ocr
 
     parsed = ocr_upload.parsed_data or {}
-
     wager = parsed.get("wager_amount") or ""
-
     initial = {
-
         "odds_american": parsed.get("odds_american") or None,
-
         "wager_amount": Decimal(wager) if wager else None,
-
     }
-
-    legs_initial = legs_initial_from_text(parsed.get("leg_descriptions", ""))
-
-    return initial, legs_initial
+    legs_initial = legs_initial_from_ocr(parsed)
+    ocr_meta = {
+        "sportsbook": parsed.get("sportsbook", ""),
+        "parlay_type": parsed.get("parlay_type", ""),
+        "confidence": parsed.get("confidence"),
+        "uncertain_fields": parsed.get("uncertain_fields") or [],
+        "legs_structured": parsed.get("legs") or [],
+    }
+    return initial, legs_initial, ocr_meta
 
 
 
@@ -162,10 +167,12 @@ def _build_review_form(
 @require_http_methods(["GET", "POST"])
 
 def create_parlay(request):
+    from django.urls import reverse
 
     method = request.GET.get("method") or request.POST.get("submission_method")
 
     ocr_upload = None
+    ocr_meta = {"uncertain_fields": []}
 
     ocr_form = OCRUploadForm()
 
@@ -179,25 +186,37 @@ def create_parlay(request):
 
     external_link = request.session.get("pending_external_link", "")
 
+    if request.method == "GET" and request.GET.get("discard_ocr"):
+        _clear_ocr_session(request)
+        return redirect(f"{reverse('parlays:create')}?method=screenshot")
 
+    if request.method == "GET":
+        review_token = request.GET.get("review")
+        session_token = request.session.get("ocr_review_token")
+        if review_token and session_token and review_token == session_token:
+            request.session.pop("ocr_review_token", None)
+            upload_id = request.session.get("pending_ocr_review_id")
+            if upload_id:
+                try:
+                    ocr_upload = OCRUpload.objects.get(pk=upload_id)
+                    method = SUBMISSION_SCREENSHOT
+                    if ocr_upload.status == OCRUploadStatus.COMPLETED:
+                        show_review = True
+                except OCRUpload.DoesNotExist:
+                    _clear_ocr_session(request)
+        else:
+            _clear_ocr_session(request)
 
-    upload_id = request.GET.get("ocr") or request.session.get("last_ocr_upload_id")
-
-    if upload_id:
-
-        try:
-
-            ocr_upload = OCRUpload.objects.get(pk=upload_id)
-
-            if ocr_upload.status == OCRUploadStatus.COMPLETED:
-
-                method = SUBMISSION_SCREENSHOT
-
-                show_review = True
-
-        except OCRUpload.DoesNotExist:
-
-            pass
+    elif request.method == "POST":
+        upload_id = request.session.get("pending_ocr_review_id") or request.POST.get(
+            "ocr_upload_id"
+        )
+        if upload_id:
+            try:
+                ocr_upload = OCRUpload.objects.get(pk=upload_id)
+                method = method or SUBMISSION_SCREENSHOT
+            except OCRUpload.DoesNotExist:
+                _clear_ocr_session(request)
 
 
 
@@ -225,17 +244,21 @@ def create_parlay(request):
 
                 upload = OCRUpload.objects.create(image=ocr_form.cleaned_data["image"])
 
-                request.session["last_ocr_upload_id"] = str(upload.id)
+                OCRService.process_upload(upload)
+                upload.refresh_from_db()
 
-                try:
+                if upload.status == OCRUploadStatus.COMPLETED:
+                    import secrets
 
-                    process_ocr_upload.delay(str(upload.id))
+                    token = secrets.token_urlsafe(16)
+                    request.session["pending_ocr_review_id"] = str(upload.id)
+                    request.session["ocr_review_token"] = token
+                    return redirect(
+                        f"{reverse('parlays:create')}?method=screenshot&review={token}"
+                    )
 
-                except Exception:
-
-                    OCRService.process_upload(upload)
-
-                return redirect(f"/create/?method=screenshot&ocr={upload.id}")
+                ocr_upload = upload
+                method = SUBMISSION_SCREENSHOT
 
 
 
@@ -313,7 +336,18 @@ def create_parlay(request):
 
                         ocr_upload.save(update_fields=["parlay"])
 
-                    request.session.pop("last_ocr_upload_id", None)
+                        if method == SUBMISSION_SCREENSHOT:
+                            from parlays.services.ocr.feedback import (
+                                schedule_ocr_scan_feedback,
+                            )
+
+                            schedule_ocr_scan_feedback(
+                                str(ocr_upload.id),
+                                str(parlay.id),
+                                request.POST,
+                            )
+
+                    _clear_ocr_session(request)
 
                     request.session.pop("pending_link_review", None)
 
@@ -339,7 +373,7 @@ def create_parlay(request):
 
         elif ocr_upload and ocr_upload.status == OCRUploadStatus.COMPLETED:
 
-            initial, legs_initial = _review_initial_from_ocr(ocr_upload)
+            initial, legs_initial, ocr_meta = _review_initial_from_ocr(ocr_upload)
 
         form = _build_review_form(
 
@@ -355,6 +389,13 @@ def create_parlay(request):
 
 
 
+    if (
+        not ocr_meta
+        and ocr_upload
+        and ocr_upload.status == OCRUploadStatus.COMPLETED
+    ):
+        _, _, ocr_meta = _review_initial_from_ocr(ocr_upload)
+
     return render(
         request,
         "parlays/create.html",
@@ -364,6 +405,7 @@ def create_parlay(request):
             "ocr_form": ocr_form,
             "link_form": link_form,
             "ocr_upload": ocr_upload,
+            "ocr_meta": ocr_meta,
             "submission_method": method,
             "show_review": show_review,
             "external_link": external_link,
@@ -378,17 +420,14 @@ def create_parlay(request):
 
 
 def ocr_status_partial(request, upload_id):
-
     upload = get_object_or_404(OCRUpload, pk=upload_id)
-
+    session_id = request.session.get("pending_ocr_review_id")
+    if session_id and str(upload.id) != str(session_id):
+        raise Http404()
     return render(
-
         request,
-
         "parlays/partials/ocr_status.html",
-
         {"ocr_upload": upload},
-
     )
 
 

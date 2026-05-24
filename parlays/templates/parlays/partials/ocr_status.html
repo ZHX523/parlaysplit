@@ -3,15 +3,11 @@
   <span class="animate-pulse">●</span> Scanning slip…
 </div>
 {% elif ocr_upload.status == "completed" %}
-<div class="text-sm text-emerald-400 space-y-2">
-  <p>✓ Scan complete — review and edit before creating.</p>
-  <a href="{% url 'parlays:create' %}?method=screenshot&ocr={{ ocr_upload.id }}"
-     class="btn-secondary w-full text-center block text-sm py-2">
-    Open review form
-  </a>
+<div class="text-sm text-emerald-400 space-y-2" id="ocr-status">
+  <p>✓ Scan complete — review and edit below.</p>
 </div>
 {% elif ocr_upload.status == "failed" %}
-<div class="text-sm text-red-400">
-  Scan failed: {{ ocr_upload.error_message|default:"Unknown error" }}. Enter details manually.
+<div class="text-sm text-red-400" id="ocr-status">
+  Scan failed: {{ ocr_upload.error_message|default:"Unknown error" }}. Enter details manually or try another image.
 </div>
 {% endif %}

@@ -2,6 +2,7 @@
 {# form, leg_type_choices, max_legs #}
 <div class="space-y-4"
      data-parlay-form
+     {% if ocr_review %}data-parlay-form-review data-ocr-hydrate-legs="ocr-legs-initial"{% endif %}
      data-max-legs="{{ max_legs }}"
      data-leg-type-hints="{% leg_type_hints_attr %}">
 
@@ -26,7 +27,7 @@
       <input type="text"
              name="odds_american"
              id="{{ form.odds_american.id_for_label }}"
-             class="input-field"
+             class="input-field{% if ocr_review %} ocr-field-uncertain{% elif ocr_uncertain_fields and 'total_odds' in ocr_uncertain_fields or 'odds_american' in ocr_uncertain_fields or 'low_confidence' in ocr_uncertain_fields %} ocr-field-uncertain{% endif %}"
              placeholder="+450"
              inputmode="numeric"
              autocomplete="off"
@@ -39,7 +40,7 @@
       <input type="text"
              name="wager_amount"
              id="{{ form.wager_amount.id_for_label }}"
-             class="input-field"
+             class="input-field{% if ocr_review %} ocr-field-uncertain{% endif %}"
              placeholder="$100.00"
              inputmode="decimal"
              autocomplete="off"
@@ -91,6 +92,9 @@
     </div>
 
     <div data-legs-container class="legs-list">
+      {% if ocr_review %}
+      {# Leg rows built from ocr-legs-initial JSON in parlay-form.js #}
+      {% else %}
       {% for leg in form.legs_initial %}
       <div class="leg-row space-y-2" data-leg-row>
         <div class="flex items-center justify-between">
@@ -99,7 +103,7 @@
         </div>
         <div>
           <label class="label">Bet type</label>
-          <select class="input-field" name="leg_type">
+          <select class="input-field{% if ocr_review %} ocr-field-uncertain{% endif %}" name="leg_type">
             {% for value, label in leg_type_choices %}
             <option value="{{ value }}" {% if leg.leg_type == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
@@ -108,10 +112,10 @@
         <div>
           <label class="label">Brief description</label>
           <input type="text"
-                 class="input-field"
+                 class="input-field{% if ocr_review %} ocr-field-uncertain{% endif %}"
                  name="leg_description"
                  data-leg-description
-                 value="{{ leg.description }}"
+                 value="{{ leg.description|escape }}"
                  placeholder=""
                  maxlength="500">
         </div>
@@ -124,7 +128,7 @@
         </div>
         <div>
           <label class="label">Bet type</label>
-          <select class="input-field" name="leg_type">
+          <select class="input-field{% if ocr_review %} ocr-field-uncertain{% endif %}" name="leg_type">
             {% for value, label in leg_type_choices %}
             <option value="{{ value }}">{{ label }}</option>
             {% endfor %}
@@ -133,7 +137,7 @@
         <div>
           <label class="label">Brief description</label>
           <input type="text"
-                 class="input-field"
+                 class="input-field{% if ocr_review %} ocr-field-uncertain{% endif %}"
                  name="leg_description"
                  data-leg-description
                  placeholder=""
@@ -141,6 +145,7 @@
         </div>
       </div>
       {% endfor %}
+      {% endif %}
     </div>
   </div>
 
@@ -152,7 +157,7 @@
       </div>
       <div>
         <label class="label">Bet type</label>
-        <select class="input-field" name="leg_type">
+        <select class="input-field{% if ocr_review %} ocr-field-uncertain{% endif %}" name="leg_type">
           {% for value, label in leg_type_choices %}
           <option value="{{ value }}">{{ label }}</option>
           {% endfor %}
@@ -161,7 +166,7 @@
       <div>
         <label class="label">Brief description</label>
         <input type="text"
-               class="input-field"
+               class="input-field{% if ocr_review %} ocr-field-uncertain{% endif %}"
                name="leg_description"
                data-leg-description
                placeholder=""

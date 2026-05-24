@@ -1,189 +1,104 @@
 {% extends "base.html" %}
 
-
-
 {% block extra_head %}
-
 <style>[x-cloak]{display:none!important}</style>
-
 {% endblock %}
-
-
 
 {% block content %}
-
 <h1 class="page-heading mb-1">Create your Parlay</h1>
 
+{% if show_review %}
+<p class="page-lead mb-6">Review your scanned bet slip, edit anything, then create your parlay.</p>
+<div hx-boost="false" class="space-y-4">
+  <section class="card">
+    {% include "parlays/partials/create_review_form.html" %}
+  </section>
+</div>
+{% else %}
 <p class="page-lead mb-6">Choose how you want to submit your bet!</p>
 
-
-
 <div hx-boost="false" x-data="{
-
   method: '{{ submission_method|default:'' }}',
-
   methodPickerOpen: {% if manual_form.errors or submission_method %}false{% else %}true{% endif %},
-
   methodLabels: {
-
     manual: 'Enter Manually',
-
     screenshot: 'Upload Screenshot',
-
     link: 'Paste a Link',
-
   },
-
   methodHints: {
-
     manual: 'Type odds, wager, and each leg yourself.',
-
     screenshot: 'Scan a bet slip image — we fill in the form.',
-
     link: 'Paste the Share link from your sportsbook app.',
-
   },
-
   pick(m) {
-
     this.method = m;
-
     this.methodPickerOpen = false;
-
   },
-
 }" x-init="$nextTick(() => window.initParlayForms && window.initParlayForms())" class="space-y-4">
 
-
-
   <section class="card">
-
     <button type="button"
-
             x-show="method"
-
             x-cloak
-
             class="collapse-toggle"
-
             @click="methodPickerOpen = !methodPickerOpen"
-
             :aria-expanded="methodPickerOpen">
-
       <div class="min-w-0 flex-1">
-
         <h2 class="font-semibold text-sm text-slate-300" x-text="methodLabels[method]"></h2>
-
         <p class="text-xs text-slate-500 mt-1"
-
            x-show="!methodPickerOpen"
-
            x-cloak
-
            x-text="methodHints[method]"></p>
-
       </div>
-
       <span class="collapse-chevron"
-
             :class="methodPickerOpen && 'collapse-chevron-open'"
-
             aria-hidden="true">▼</span>
-
     </button>
-
     <div x-show="!method || methodPickerOpen"
-
          x-cloak
-
          :class="method && 'collapse-panel'"
-
          class="grid gap-3">
-
       <button type="button"
-
               data-pick-manual
-
               @click="pick('manual'); $nextTick(() => window.initParlayForms && window.initParlayForms())"
-
               :class="method === 'manual' ? 'method-card method-card-active' : 'method-card'">
-
         <span class="method-card-title">Enter Manually</span>
-
         <span class="method-card-desc">Type odds, wager, and each leg yourself.</span>
-
       </button>
-
       <button type="button"
-
               @click="pick('screenshot')"
-
               :class="method === 'screenshot' ? 'method-card method-card-active' : 'method-card'">
-
         <span class="method-card-title">Upload Screenshot</span>
-
         <span class="method-card-desc">Scan a bet slip image — we fill in the form.</span>
-
       </button>
-
       <button type="button"
-
               @click="pick('link')"
-
               :class="method === 'link' ? 'method-card method-card-active' : 'method-card'">
-
         <span class="method-card-title">Paste a Link</span>
-
         <span class="method-card-desc">Paste the Share link from your sportsbook app.</span>
-
       </button>
-
     </div>
-
   </section>
-
-
 
   <section x-show="method === 'manual'" x-cloak class="card">
-
     <h2 class="font-semibold text-sm text-slate-300 mb-3">Parlay details</h2>
-
     <form method="post" class="space-y-4">
-
       {% csrf_token %}
-
       <input type="hidden" name="action" value="create">
-
       <input type="hidden" name="submission_method" value="manual">
-
       {% include "parlays/partials/parlay_entry_fields.html" with form=manual_form %}
-
       <button type="submit" class="btn-primary w-full">Create & Share Link</button>
-
     </form>
-
   </section>
-
-
 
   <section x-show="method === 'screenshot'" x-cloak class="card">
-
-    {% include "parlays/partials/feature_coming_soon.html" with feature_hint="Screenshot upload and OCR auto-fill are on the way." %}
-
+    {% include "parlays/partials/ocr_upload_section.html" %}
   </section>
-
-
 
   <section x-show="method === 'link'" x-cloak class="card">
-
     {% include "parlays/partials/feature_coming_soon.html" with feature_hint="Paste a sportsbook Share link to import your bet slip automatically." %}
-
   </section>
 
-
-
 </div>
-
+{% endif %}
 {% endblock %}
-
-

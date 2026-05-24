@@ -1118,7 +1118,7 @@
 
   function syncAllLegDescriptionPlaceholders(root) {
 
-    root.querySelectorAll("[data-leg-row]").forEach((row) => {
+    legRowsInContainer(root).forEach((row) => {
 
       updateLegDescriptionPlaceholder(row, root);
 
@@ -1156,7 +1156,7 @@
 
   function updateRemoveButtons(root) {
 
-    const rows = root.querySelectorAll("[data-leg-row]");
+    const rows = legRowsInContainer(root);
 
     rows.forEach((row) => {
 
@@ -1206,7 +1206,7 @@
 
   function renumberLegs(root) {
 
-    root.querySelectorAll("[data-leg-row]").forEach((row, i) => {
+    legRowsInContainer(root).forEach((row, i) => {
 
       const label = row.querySelector("[data-leg-label]");
 
@@ -1222,7 +1222,7 @@
 
     const btn = root.querySelector("[data-add-leg]");
 
-    const count = root.querySelectorAll("[data-leg-row]").length;
+    const count = legRowsInContainer(root).length;
 
     if (btn) btn.style.display = count >= maxLegs ? "none" : "";
 
@@ -1262,6 +1262,56 @@
 
 
 
+  function legRowsInContainer(root) {
+    const container = root.querySelector("[data-legs-container]");
+    return container ? container.querySelectorAll("[data-leg-row]") : [];
+  }
+
+  function hydrateOcrLegs(root) {
+    const scriptId = root.dataset.ocrHydrateLegs;
+    if (!scriptId) return false;
+
+    const el = document.getElementById(scriptId);
+    const container = root.querySelector("[data-legs-container]");
+    const template = root.querySelector("[data-leg-template]");
+    if (!el || !container || !template) return false;
+
+    let legs;
+    try {
+      legs = JSON.parse(el.textContent);
+    } catch {
+      return false;
+    }
+    if (!Array.isArray(legs) || legs.length === 0) return false;
+
+    const maxLegs = parseInt(root.dataset.maxLegs || "20", 10);
+    container.replaceChildren();
+
+    legs.forEach((leg) => {
+      const clone = template.content.cloneNode(true);
+      container.appendChild(clone);
+      const row = container.lastElementChild;
+      if (!row) return;
+      const sel = row.querySelector('[name="leg_type"]');
+      const inp = row.querySelector("[data-leg-description]");
+      const highlight = root.hasAttribute("data-parlay-form-review");
+      if (sel && leg.leg_type) sel.value = leg.leg_type;
+      if (inp) inp.value = leg.description || "";
+      if (highlight) {
+        if (sel) sel.classList.add("ocr-field-uncertain");
+        if (inp) inp.classList.add("ocr-field-uncertain");
+      }
+      bindLegRow(row, root, maxLegs);
+      updateLegDescriptionPlaceholder(row, root);
+    });
+
+    renumberLegs(root);
+    updateAddButton(root, maxLegs);
+    updateRemoveButtons(root);
+    root._parlayLegsReady = true;
+    return true;
+  }
+
   function initParlayForm(root) {
 
     const maxLegs = parseInt(root.dataset.maxLegs || "20", 10);
@@ -1274,11 +1324,13 @@
 
 
 
-    if (!legsReady) {
+    const ocrHydrated = hydrateOcrLegs(root);
+
+    if (!ocrHydrated && !legsReady) {
 
       root._parlayLegsReady = true;
 
-      root.querySelectorAll("[data-leg-row]").forEach((row) => bindLegRow(row, root, maxLegs));
+      legRowsInContainer(root).forEach((row) => bindLegRow(row, root, maxLegs));
 
     }
 

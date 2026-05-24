@@ -83,6 +83,35 @@ def legs_initial_from_text(text: str) -> list[dict]:
     return [{"leg_type": LegType.MONEYLINE, "description": line} for line in lines]
 
 
+def _form_description_from_ocr_leg(leg: dict) -> str:
+    """Short, form-safe leg text (selection + market, no repeated matchup line)."""
+    selection = (leg.get("selection") or "").strip()
+    bet_type = (leg.get("bet_type") or "").strip()
+    line = (leg.get("line") or "").strip()
+    if selection and bet_type:
+        market = f"{bet_type} {line}".strip() if line else bet_type
+        return f"{selection} - {market}"[:500]
+    return (leg.get("description") or "").strip()[:500]
+
+
+def legs_initial_from_ocr(parsed: dict) -> list[dict]:
+    """Build leg form rows from structured OCR output."""
+    structured = parsed.get("legs") or []
+    if structured:
+        rows = []
+        valid = {c[0] for c in LegType.choices}
+        for leg in structured:
+            desc = _form_description_from_ocr_leg(leg)
+            if not desc:
+                continue
+            leg_type = leg.get("leg_type") or LegType.MONEYLINE
+            if leg_type not in valid:
+                leg_type = LegType.MONEYLINE
+            rows.append({"leg_type": leg_type, "description": desc})
+        return rows or default_legs_initial()
+    return legs_initial_from_text(parsed.get("leg_descriptions", ""))
+
+
 
 
 

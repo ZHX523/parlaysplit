@@ -127,7 +127,8 @@ ol{list-style-position:inside}
 .safe-top{padding-top:env(safe-area-inset-top)}
 .safe-bottom{padding-bottom:env(safe-area-inset-bottom)}
 
-.btn-primary{display:inline-flex;align-items:center;justify-content:center;border-radius:.75rem;background-color:#10b981;padding:.75rem 1.25rem;min-height:44px;font-weight:600;color:#020617;box-shadow:0 10px 15px -3px rgba(16,185,129,.2);transition:transform 150ms}
+.btn-primary{display:inline-flex;align-items:center;justify-content:center;border-radius:.75rem;background-color:#10b981;padding:.75rem 1.25rem;min-height:44px;font-weight:600;color:#020617;box-shadow:0 10px 15px -3px rgba(16,185,129,.2);transition:transform 150ms,background-color 150ms,box-shadow 150ms}
+.btn-primary:hover{background-color:#34d399;box-shadow:0 10px 15px -3px rgba(52,211,153,.25)}
 .btn-primary:active{transform:scale(.98)}
 .btn-secondary{display:inline-flex;align-items:center;justify-content:center;border-radius:.75rem;border:1px solid #334155;background-color:#1e293b;padding:.75rem 1.25rem;min-height:44px;font-weight:500;color:#f1f5f9;transition:transform 150ms}
 .btn-secondary:active{transform:scale(.98)}
@@ -350,3 +351,7 @@ button.btn-check-parlay,a.btn-check-parlay{-webkit-appearance:none;appearance:no
 .break-anywhere{overflow-wrap:anywhere;word-break:break-word}
 .form-grid-2{display:grid;grid-template-columns:1fr;gap:1rem}
 @media (min-width:640px){.form-grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ocr-review-keyword{font-weight:700;color:#f59e0b}
+.ocr-field-uncertain{border-width:1px;border-color:rgba(245,158,11,.6);box-shadow:0 0 0 1px rgba(245,158,11,.25)}
+.ocr-field-uncertain:focus{border-color:rgba(251,191,36,.7);box-shadow:0 0 0 1px rgba(245,158,11,.3)}
+.ocr-leg-uncertain{border-left:2px solid rgba(245,158,11,.6);padding-left:.5rem}
