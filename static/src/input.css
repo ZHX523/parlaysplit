@@ -462,8 +462,32 @@
     @apply cursor-pointer;
   }
   .ocr-paste-zone {
-    @apply cursor-pointer border-0 outline-none appearance-none text-inherit;
-    font: inherit;
+    @apply cursor-text outline-none text-center text-base font-semibold text-slate-100;
+    -webkit-user-select: text;
+    user-select: text;
+  }
+  .ocr-paste-placeholder {
+    @apply text-slate-500 pointer-events-none;
+  }
+  .ocr-paste-zone.has-preview {
+    @apply cursor-pointer;
+  }
+  .ocr-paste-zone.has-preview .ocr-paste-placeholder {
+    @apply hidden;
+  }
+  .ocr-zone-preview {
+    @apply hidden max-h-36 w-auto max-w-full rounded-md object-contain object-center pointer-events-none mx-auto;
+  }
+  .ocr-zone-preview.is-visible {
+    display: block !important;
+  }
+  .ocr-upload-zone.has-file,
+  .ocr-paste-zone.has-preview {
+    @apply overflow-hidden py-2;
+  }
+  .ocr-upload-zone.has-file .ocr-zone-title,
+  .ocr-paste-zone.has-preview .ocr-paste-placeholder {
+    @apply hidden;
   }
   .ocr-upload-zone:focus-within,
   .ocr-paste-zone:focus {

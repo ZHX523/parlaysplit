@@ -47,6 +47,10 @@
                class="ocr-file-input"
                aria-labelledby="ocr-upload-label ocr-upload-prompt">
         <span class="ocr-zone-title" id="ocr-upload-prompt">Upload Screenshot</span>
+        <img class="ocr-zone-preview"
+             id="ocr-upload-preview"
+             alt="Uploaded screenshot preview"
+             decoding="async">
       </label>
 
       <p class="ocr-field-status hidden"
@@ -60,25 +64,31 @@
     <div class="ocr-upload-field">
       <span class="label" id="ocr-paste-label">Paste screenshot</span>
 
-      <button type="button"
-              class="ocr-paste-zone"
-              id="ocr-paste-zone"
-              aria-labelledby="ocr-paste-label ocr-paste-prompt">
-        <span class="ocr-zone-title" id="ocr-paste-prompt">Paste Screenshot</span>
-      </button>
+      <div class="ocr-paste-zone"
+           id="ocr-paste-zone"
+           contenteditable="true"
+           role="textbox"
+           aria-labelledby="ocr-paste-label"
+           aria-multiline="false"
+           spellcheck="false"
+           autocapitalize="off"
+           autocorrect="off">
+        <span class="ocr-zone-title ocr-paste-placeholder" id="ocr-paste-placeholder">Paste Screenshot</span>
+        <img class="ocr-zone-preview"
+             id="ocr-paste-preview"
+             alt="Pasted screenshot preview"
+             decoding="async">
+      </div>
+
+      <p class="ocr-paste-change hidden text-xs text-center text-slate-500 mt-1"
+         id="ocr-paste-change">
+        Tap image or press Delete to paste a different screenshot
+      </p>
 
       <p class="ocr-field-status hidden"
          id="ocr-paste-status"
          role="status"
          aria-live="polite"></p>
-
-      <p class="ocr-field-status hidden"
-         id="ocr-paste-chosen"
-         aria-live="polite"></p>
-    </div>
-
-    <div class="ocr-file-preview hidden" id="ocr-file-preview" aria-hidden="true">
-      <img alt="Screenshot preview" class="ocr-file-preview-img" id="ocr-file-preview-img" width="320" height="240" decoding="async">
     </div>
 
     <p class="text-red-400 text-sm hidden break-anywhere"

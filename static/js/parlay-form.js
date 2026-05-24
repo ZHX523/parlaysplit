@@ -1400,16 +1400,13 @@
     const pasteZone = form.querySelector("#ocr-paste-zone");
     const uploadStatus = form.querySelector("#ocr-upload-status");
     const pasteStatus = form.querySelector("#ocr-paste-status");
-    const pasteChosen = form.querySelector("#ocr-paste-chosen");
     const uploadPrompt = form.querySelector("#ocr-upload-prompt");
-    const pastePrompt = form.querySelector("#ocr-paste-prompt");
+    const uploadPreview = form.querySelector("#ocr-upload-preview");
+    const pastePlaceholder = form.querySelector("#ocr-paste-placeholder");
+    const pastePreview = form.querySelector("#ocr-paste-preview");
+    const pasteChangeHint = form.querySelector("#ocr-paste-change");
     const requiredMsg = form.querySelector("#ocr-image-required");
-    const previewWrap = form.querySelector("#ocr-file-preview");
-    const previewImg = form.querySelector("#ocr-file-preview-img");
     const UPLOAD_PROMPT_DEFAULT = "Upload Screenshot";
-    const UPLOAD_PROMPT_HAS_FILE = "Upload Screenshot";
-    const PASTE_PROMPT_DEFAULT = "Paste Screenshot";
-    const PASTE_PROMPT_HAS_FILE = "Paste Screenshot";
     let previewUrl = null;
     let activeSource = null;
 
@@ -1446,17 +1443,39 @@
       requiredMsg.classList.remove("hidden");
     }
 
+    function hideZonePreview(zone, previewEl) {
+      if (previewEl) {
+        previewEl.classList.remove("is-visible");
+        previewEl.removeAttribute("src");
+      }
+      if (zone) zone.classList.remove("has-file", "has-preview");
+    }
+
     function resetUploadUi() {
-      if (uploadZone) uploadZone.classList.remove("has-file");
-      if (uploadPrompt) uploadPrompt.textContent = UPLOAD_PROMPT_DEFAULT;
+      hideZonePreview(uploadZone, uploadPreview);
+      if (uploadPrompt) {
+        uploadPrompt.textContent = UPLOAD_PROMPT_DEFAULT;
+        uploadPrompt.classList.remove("hidden");
+      }
       setFieldStatus(uploadStatus, "", "");
     }
 
+    function restorePasteZoneChildren() {
+      if (!pasteZone || !pastePlaceholder || !pastePreview) return;
+      pasteZone.textContent = "";
+      pasteZone.appendChild(pastePlaceholder);
+      pasteZone.appendChild(pastePreview);
+    }
+
     function resetPasteUi() {
-      if (pasteZone) pasteZone.classList.remove("has-file");
-      if (pastePrompt) pastePrompt.textContent = PASTE_PROMPT_DEFAULT;
+      hideZonePreview(pasteZone, pastePreview);
+      restorePasteZoneChildren();
+      if (pasteZone) {
+        pasteZone.contentEditable = "true";
+      }
+      if (pastePlaceholder) pastePlaceholder.classList.remove("hidden");
+      if (pasteChangeHint) pasteChangeHint.classList.add("hidden");
       setFieldStatus(pasteStatus, "", "");
-      setFieldStatus(pasteChosen, "", "");
     }
 
     function clearAll() {
@@ -1466,8 +1485,15 @@
       resetUploadUi();
       resetPasteUi();
       if (fileInput) fileInput.value = "";
-      if (previewWrap) previewWrap.classList.add("hidden");
-      if (previewImg) previewImg.removeAttribute("src");
+    }
+
+    function showZonePreview(zone, previewEl, file) {
+      if (!file.type.startsWith("image/") || !previewEl || !zone) return;
+      revokePreview();
+      previewUrl = URL.createObjectURL(file);
+      previewEl.src = previewUrl;
+      previewEl.classList.add("is-visible");
+      zone.classList.add("has-file");
     }
 
     function displaySelectedFile(file, source) {
@@ -1481,23 +1507,19 @@
 
       if (source === "upload") {
         resetPasteUi();
-        if (uploadZone) uploadZone.classList.add("has-file");
-        if (uploadPrompt) uploadPrompt.textContent = UPLOAD_PROMPT_HAS_FILE;
-        setFieldStatus(uploadStatus, file.name, "success");
+        showZonePreview(uploadZone, uploadPreview, file);
+        if (uploadPrompt) uploadPrompt.classList.add("hidden");
+        setFieldStatus(uploadStatus, "", "");
       } else {
         resetUploadUi();
-        if (pasteZone) pasteZone.classList.add("has-file");
-        if (pastePrompt) pastePrompt.textContent = PASTE_PROMPT_HAS_FILE;
-        setFieldStatus(pasteChosen, file.name, "success");
-        setFieldStatus(pasteStatus, "Screenshot ready from clipboard.", "success");
-      }
-
-      if (previewImg && previewWrap && file.type.startsWith("image/")) {
-        revokePreview();
-        previewUrl = URL.createObjectURL(file);
-        previewImg.src = previewUrl;
-        previewWrap.classList.remove("hidden");
-        previewWrap.setAttribute("aria-hidden", "false");
+        restorePasteZoneChildren();
+        if (pasteZone) {
+          pasteZone.classList.add("has-preview");
+          if (pastePlaceholder) pastePlaceholder.classList.add("hidden");
+        }
+        if (pasteChangeHint) pasteChangeHint.classList.remove("hidden");
+        showZonePreview(pasteZone, pastePreview, file);
+        setFieldStatus(pasteStatus, "", "");
       }
     }
 
@@ -1534,12 +1556,18 @@
     }
 
     function handlePasteEvent(event) {
-      if (!isFormVisible() || !pasteFocusActive()) return;
+      if (!isFormVisible() || !pasteZone) return;
+      const inPasteField =
+        event.target === pasteZone ||
+        pasteZone.contains(event.target) ||
+        pasteFocusActive();
+      if (!inPasteField) return;
+
       const file = fileFromClipboardData(event.clipboardData);
       if (!file) {
         setFieldStatus(
           pasteStatus,
-          "No image on clipboard — copy your screenshot first, then paste again.",
+          "No image on clipboard — copy your screenshot, tap here, then paste.",
           "error"
         );
         return;
@@ -1565,24 +1593,6 @@
       return null;
     }
 
-    async function tryPasteFromClipboard() {
-      if (!isFormVisible()) return;
-      setFieldStatus(pasteStatus, "Reading clipboard…", "");
-
-      const pasted = await readClipboardImage();
-      if (pasted) {
-        displaySelectedFile(pasted, "paste");
-        return;
-      }
-
-      setFieldStatus(
-        pasteStatus,
-        "No image found. Copy your screenshot first, tap here again, or long-press → Paste on your phone.",
-        "error"
-      );
-      if (pasteZone) pasteZone.focus();
-    }
-
     function handleUploadDrop(event) {
       if (!isFormVisible()) return;
       const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
@@ -1604,8 +1614,30 @@
 
     if (pasteZone) {
       pasteZone.addEventListener("paste", handlePasteEvent);
+      pasteZone.addEventListener("keydown", function (event) {
+        if (event.key === "Tab" || event.key === "Escape") return;
+        if (event.ctrlKey || event.metaKey) return;
+        if (
+          (event.key === "Backspace" || event.key === "Delete") &&
+          pasteZone.classList.contains("has-preview")
+        ) {
+          event.preventDefault();
+          resetPasteUi();
+          pasteZone.focus();
+          return;
+        }
+        if (pasteZone.classList.contains("has-preview")) {
+          event.preventDefault();
+          return;
+        }
+        if (event.key.length === 1) {
+          event.preventDefault();
+        }
+      });
       pasteZone.addEventListener("click", function () {
-        tryPasteFromClipboard();
+        if (!pasteZone.classList.contains("has-preview")) return;
+        resetPasteUi();
+        pasteZone.focus();
       });
     }
 
