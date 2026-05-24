@@ -90,13 +90,19 @@
     @apply whitespace-nowrap;
   }
   .ownership-host-actions {
-    @apply grid w-full basis-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:basis-auto sm:justify-end;
+    @apply flex w-full basis-full justify-end gap-2 sm:w-auto sm:basis-auto;
+  }
+  .ownership-host-actions:has(> :nth-child(2)) {
+    @apply grid grid-cols-2 sm:flex sm:justify-end;
   }
   .host-action-form {
     @apply min-w-0;
   }
   .ownership-host-actions .host-action-btn {
-    @apply w-full;
+    @apply w-auto;
+  }
+  .ownership-host-actions:has(> :nth-child(2)) .host-action-btn {
+    @apply w-full sm:w-auto;
   }
   .share-link-row {
     @apply flex flex-col gap-2 sm:flex-row sm:items-stretch;
@@ -399,7 +405,14 @@
     @apply text-xs leading-snug text-slate-400;
   }
   .ownership-panel-header {
-    @apply mb-3 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between;
+    @apply mb-3 flex flex-row flex-wrap items-center justify-between gap-x-3 gap-y-2;
+  }
+  .ownership-panel-header h2 {
+    @apply min-w-0;
+  }
+  .ownership-panel-header .join-status-toggle,
+  .ownership-panel-header .status-badge {
+    @apply shrink-0;
   }
   .legs-section-header {
     @apply mb-3 flex flex-wrap items-center justify-between gap-2;

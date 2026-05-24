@@ -257,8 +257,10 @@ button.btn-check-parlay,a.btn-check-parlay{-webkit-appearance:none;appearance:no
 .ownership-participant-row:last-child{border-bottom-width:0}
 .ownership-participant-meta{margin-left:auto;display:flex;flex-shrink:0;flex-direction:column;align-items:flex-end;gap:.125rem;text-align:right;font-size:.75rem;line-height:1.25}
 .ownership-participant-meta .hint-line{white-space:nowrap}
-.ownership-host-actions{display:grid;width:100%;flex-basis:100%;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}
-.ownership-host-actions .host-action-btn{width:100%}
+.ownership-host-actions{display:flex;width:100%;flex-basis:100%;justify-content:flex-end;gap:.5rem}
+.ownership-host-actions:has(> :nth-child(2)){display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.ownership-host-actions .host-action-btn{width:auto}
+.ownership-host-actions:has(> :nth-child(2)) .host-action-btn{width:100%}
 .host-action-form{min-width:0}
 .share-link-row{display:flex;flex-direction:column;gap:.5rem}
 .share-link-row .btn-primary{width:100%}
@@ -303,7 +305,8 @@ button.btn-check-parlay,a.btn-check-parlay{-webkit-appearance:none;appearance:no
   .ownership-participant-row{column-gap:1rem}
   .ownership-participant-meta{gap:.5rem;font-size:.875rem;line-height:1.25rem}
   .ownership-host-actions{display:flex;width:auto;flex-basis:auto;justify-content:flex-end}
-  .ownership-host-actions .host-action-btn{width:auto}
+  .ownership-host-actions:has(> :nth-child(2)){display:flex}
+  .ownership-host-actions:has(> :nth-child(2)) .host-action-btn{width:auto}
   .share-link-row{flex-direction:row;align-items:stretch}
   .share-link-row .btn-primary{width:auto;min-width:5.5rem;flex-shrink:0}
   .host-code-display{font-size:1.875rem;line-height:2.25rem;letter-spacing:.35em}
@@ -340,8 +343,9 @@ button.btn-check-parlay,a.btn-check-parlay{-webkit-appearance:none;appearance:no
 .page-lead{font-size:.875rem;line-height:1.625;color:#94a3b8}
 @media (min-width:640px){.page-lead{font-size:1rem;line-height:1.5rem}}
 .hint-line{font-size:.75rem;line-height:1.375;color:#94a3b8}
-.ownership-panel-header{margin-bottom:.75rem;display:flex;flex-direction:column;align-items:stretch;gap:.75rem}
-@media (min-width:640px){.ownership-panel-header{flex-direction:row;align-items:center;justify-content:space-between}}
+.ownership-panel-header{margin-bottom:.75rem;display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;column-gap:.75rem;row-gap:.5rem}
+.ownership-panel-header h2{min-width:0}
+.ownership-panel-header .join-status-toggle,.ownership-panel-header .status-badge{flex-shrink:0}
 .legs-section-header{margin-bottom:.75rem;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.5rem}
 .break-anywhere{overflow-wrap:anywhere;word-break:break-word}
 .form-grid-2{display:grid;grid-template-columns:1fr;gap:1rem}
