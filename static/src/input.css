@@ -315,7 +315,7 @@
     @apply inline-block h-2.5 w-2.5 rounded-sm;
   }
   .parlay-legs-list {
-    @apply space-y-3 text-base leading-relaxed text-slate-200;
+    @apply space-y-1 text-base leading-snug text-slate-200;
     list-style: decimal;
     list-style-position: outside;
     padding-left: 1.25rem;

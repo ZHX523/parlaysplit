@@ -202,8 +202,8 @@ button.btn-check-parlay,a.btn-check-parlay{-webkit-appearance:none;appearance:no
 .text-base{font-size:1rem;line-height:1.5rem}
 .space-y-3>:not([hidden])~:not([hidden]){margin-top:.75rem}
 .pl-1{padding-left:.25rem}
-.parlay-legs-list{margin-left:.125rem;padding-left:1.25rem;font-size:1rem;line-height:1.625;color:#e2e8f0;list-style:decimal;list-style-position:outside}
-.parlay-legs-list>li+li{margin-top:.75rem}
+.parlay-legs-list{margin-left:.125rem;padding-left:1.25rem;font-size:1rem;line-height:1.375;color:#e2e8f0;list-style:decimal;list-style-position:outside}
+.parlay-legs-list>li+li{margin-top:.25rem}
 .parlay-legs-list li{padding-left:.25rem}
 .parlay-leg-type{font-size:.875rem;line-height:1.25rem;color:#64748b}
 .ownership-bar{display:flex;height:1rem;width:100%;overflow:hidden;border-radius:9999px;border:1px solid rgba(51,65,85,.8);background-color:#1e293b}
