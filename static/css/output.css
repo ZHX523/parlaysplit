@@ -253,10 +253,11 @@ button.btn-check-parlay,a.btn-check-parlay{-webkit-appearance:none;appearance:no
 .app-footer-inner{margin-left:auto;margin-right:auto;width:100%;max-width:32rem;padding-left:1rem;padding-right:1rem;padding-top:1rem;padding-bottom:1rem;font-size:.75rem;line-height:1rem;color:#64748b}
 .app-footer-inner>:not([hidden])~:not([hidden]){margin-top:.5rem}
 .site-logo{font-weight:700;font-size:1.25rem;line-height:1.75rem;letter-spacing:-.025em;color:#34d399;flex-shrink:0}
-.ownership-participant-row{display:flex;flex-direction:column;gap:.75rem;padding-top:.75rem;padding-bottom:.75rem;border-bottom:1px solid #1e293b}
+.ownership-participant-row{display:flex;flex-direction:row;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;column-gap:.5rem;row-gap:.5rem;padding-top:.75rem;padding-bottom:.75rem;border-bottom:1px solid #1e293b}
 .ownership-participant-row:last-child{border-bottom-width:0}
-.ownership-participant-meta{display:flex;flex-direction:column;gap:.5rem;width:100%;font-size:.875rem;line-height:1.25rem}
-.ownership-host-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;width:100%}
+.ownership-participant-meta{margin-left:auto;display:flex;flex-shrink:0;flex-direction:column;align-items:flex-end;gap:.125rem;text-align:right;font-size:.75rem;line-height:1.25}
+.ownership-participant-meta .hint-line{white-space:nowrap}
+.ownership-host-actions{display:grid;width:100%;flex-basis:100%;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}
 .ownership-host-actions .host-action-btn{width:100%}
 .host-action-form{min-width:0}
 .share-link-row{display:flex;flex-direction:column;gap:.5rem}
@@ -299,9 +300,9 @@ button.btn-check-parlay,a.btn-check-parlay{-webkit-appearance:none;appearance:no
   .site-logo{font-size:1.5rem;line-height:2rem}
   .btn-nav-group{gap:.5rem;width:12.75rem}
   .app-main{padding-bottom:2rem}
-  .ownership-participant-row{flex-direction:row;align-items:flex-start;justify-content:space-between;gap:1rem}
-  .ownership-participant-meta{width:auto;align-items:flex-end;text-align:right;flex-shrink:0}
-  .ownership-host-actions{display:flex;width:auto;justify-content:flex-end}
+  .ownership-participant-row{column-gap:1rem}
+  .ownership-participant-meta{gap:.5rem;font-size:.875rem;line-height:1.25rem}
+  .ownership-host-actions{display:flex;width:auto;flex-basis:auto;justify-content:flex-end}
   .ownership-host-actions .host-action-btn{width:auto}
   .share-link-row{flex-direction:row;align-items:stretch}
   .share-link-row .btn-primary{width:auto;min-width:5.5rem;flex-shrink:0}
