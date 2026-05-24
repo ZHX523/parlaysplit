@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
-  <link rel="stylesheet" href="{% static 'css/output.css' %}?v=33">
+  <link rel="stylesheet" href="{% static 'css/output.css' %}?v=36">
   {% if google_analytics_id %}
   <script async src="https://www.googletagmanager.com/gtag/js?id={{ google_analytics_id }}"></script>
   <script>
@@ -20,7 +20,7 @@
     gtag('config', '{{ google_analytics_id }}');
   </script>
   {% endif %}
-  <script src="{% static 'js/parlay-form.js' %}?v=20"></script>
+  <script src="{% static 'js/parlay-form.js' %}?v=26"></script>
   <script defer src="https://unpkg.com/alpinejs@3.14.3/dist/cdn.min.js"></script>
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
   {% if plausible_domain %}

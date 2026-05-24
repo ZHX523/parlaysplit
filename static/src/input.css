@@ -217,6 +217,12 @@
   .method-card {
     @apply flex flex-col items-start gap-1 w-full min-h-[44px] text-left rounded-xl border border-slate-700 bg-slate-800 p-4 transition-colors active:scale-[0.98];
   }
+  .method-card:hover:not(.method-card-active):not(.method-card-disabled) {
+    @apply border-emerald-500 bg-emerald-500/10;
+  }
+  .method-card:hover:not(.method-card-active):not(.method-card-disabled) .method-card-title {
+    @apply text-emerald-300;
+  }
   .method-card-active {
     @apply border-emerald-500 bg-emerald-500/10;
   }
@@ -433,6 +439,65 @@
   }
   .ocr-field-uncertain:focus {
     @apply border-amber-400/70 ring-amber-500/30;
+  }
+  .ocr-upload-fields {
+    @apply flex flex-col gap-4;
+  }
+  .ocr-upload-field {
+    @apply space-y-2;
+  }
+  .ocr-fields-divider {
+    @apply text-center text-xs font-medium uppercase tracking-wider text-slate-600 py-0;
+  }
+  .ocr-file-input {
+    @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+    clip-path: inset(50%);
+  }
+  .ocr-upload-zone,
+  .ocr-paste-zone {
+    @apply relative flex min-h-[112px] w-full flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-slate-600 bg-slate-800/60 px-4 py-5 text-center transition-colors touch-manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ocr-upload-zone {
+    @apply cursor-pointer;
+  }
+  .ocr-paste-zone {
+    @apply cursor-text outline-none;
+  }
+  .ocr-upload-zone:focus-within,
+  .ocr-paste-zone:focus {
+    @apply border-emerald-500 bg-emerald-500/10 ring-2 ring-emerald-500/25;
+  }
+  .ocr-upload-zone.has-file,
+  .ocr-paste-zone.has-file {
+    @apply border-emerald-500/70 bg-emerald-500/5;
+  }
+  .ocr-upload-zone-dragover {
+    @apply border-emerald-400 bg-emerald-500/15;
+  }
+  .ocr-zone-title {
+    @apply text-base font-semibold text-slate-100 px-2;
+  }
+  .ocr-zone-sub {
+    @apply max-w-[18rem] text-xs leading-snug text-slate-500 px-2;
+  }
+  .ocr-field-status {
+    @apply text-sm break-anywhere px-1;
+  }
+  .ocr-field-status.is-success {
+    @apply text-emerald-300;
+  }
+  .ocr-field-status.is-error {
+    @apply text-amber-300/95;
+  }
+  .ocr-file-preview {
+    @apply rounded-xl border border-slate-700 bg-slate-900/80 overflow-hidden;
+  }
+  .ocr-file-preview-img {
+    @apply block w-full max-h-48 object-contain object-center mx-auto;
+  }
+  .touch-manipulation {
+    touch-action: manipulation;
   }
   .ocr-leg-uncertain {
     @apply border-l-2 border-amber-500/60 pl-2;

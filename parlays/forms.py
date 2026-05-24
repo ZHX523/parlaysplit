@@ -753,11 +753,9 @@ class OCRUploadForm(forms.Form):
 
             attrs={
 
-                "class": "input-field",
+                "class": "ocr-file-input",
 
-                "accept": "image/*",
-
-                "capture": "environment",
+                "accept": "image/png,image/jpeg,image/webp,image/*",
 
             },
 

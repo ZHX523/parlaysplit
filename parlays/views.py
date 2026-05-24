@@ -226,6 +226,10 @@ def create_parlay(request):
 
         show_review = True
 
+    elif method == SUBMISSION_LINK:
+
+        method = None
+
 
 
     if request.method == "POST":

@@ -72,10 +72,12 @@
         <span class="method-card-desc">Scan a bet slip image — we fill in the form.</span>
       </button>
       <button type="button"
-              @click="pick('link')"
-              :class="method === 'link' ? 'method-card method-card-active' : 'method-card'">
+              class="method-card method-card-disabled"
+              disabled
+              aria-disabled="true"
+              title="Coming soon">
         <span class="method-card-title">Paste a Link</span>
-        <span class="method-card-desc">Paste the Share link from your sportsbook app.</span>
+        <span class="method-card-desc">Coming soon — paste your sportsbook Share link.</span>
       </button>
     </div>
   </section>

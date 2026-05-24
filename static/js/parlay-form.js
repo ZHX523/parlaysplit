@@ -1388,6 +1388,268 @@
 
 
 
+  function initOcrUploadForm(root) {
+    const scope = root && root.querySelector ? root : document;
+    const form = scope.querySelector("[data-ocr-upload-form]");
+    if (!form || form._ocrUploadBound) return;
+    form._ocrUploadBound = true;
+
+    const fileInput = form.querySelector('input[type="file"][name="image"]');
+    const btn = form.querySelector("#ocr-scan-btn");
+    const uploadZone = form.querySelector("#ocr-upload-zone");
+    const pasteZone = form.querySelector("#ocr-paste-zone");
+    const uploadStatus = form.querySelector("#ocr-upload-status");
+    const pasteStatus = form.querySelector("#ocr-paste-status");
+    const pasteChosen = form.querySelector("#ocr-paste-chosen");
+    const uploadPrompt = form.querySelector("#ocr-upload-prompt");
+    const pastePrompt = form.querySelector("#ocr-paste-prompt");
+    const requiredMsg = form.querySelector("#ocr-image-required");
+    const previewWrap = form.querySelector("#ocr-file-preview");
+    const previewImg = form.querySelector("#ocr-file-preview-img");
+    const UPLOAD_PROMPT_DEFAULT = "Upload Screenshot";
+    const UPLOAD_PROMPT_HAS_FILE = "Upload Screenshot";
+    const PASTE_PROMPT_DEFAULT = "Paste Screenshot";
+    const PASTE_PROMPT_HAS_FILE = "Paste Screenshot";
+    let dotTimer = null;
+    let previewUrl = null;
+    let activeSource = null;
+
+    function revokePreview() {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        previewUrl = null;
+      }
+    }
+
+    function setFieldStatus(el, message, tone) {
+      if (!el) return;
+      if (!message) {
+        el.textContent = "";
+        el.classList.add("hidden");
+        el.classList.remove("is-success", "is-error");
+        return;
+      }
+      el.textContent = message;
+      el.classList.remove("hidden", "is-success", "is-error");
+      if (tone === "success") el.classList.add("is-success");
+      if (tone === "error") el.classList.add("is-error");
+    }
+
+    function hideRequiredMsg() {
+      if (!requiredMsg) return;
+      requiredMsg.textContent = "";
+      requiredMsg.classList.add("hidden");
+    }
+
+    function showRequiredMsg(message) {
+      if (!requiredMsg) return;
+      requiredMsg.textContent = message;
+      requiredMsg.classList.remove("hidden");
+    }
+
+    function resetUploadUi() {
+      if (uploadZone) uploadZone.classList.remove("has-file");
+      if (uploadPrompt) uploadPrompt.textContent = UPLOAD_PROMPT_DEFAULT;
+      setFieldStatus(uploadStatus, "", "");
+    }
+
+    function resetPasteUi() {
+      if (pasteZone) pasteZone.classList.remove("has-file");
+      if (pastePrompt) pastePrompt.textContent = PASTE_PROMPT_DEFAULT;
+      setFieldStatus(pasteStatus, "", "");
+      setFieldStatus(pasteChosen, "", "");
+    }
+
+    function clearAll() {
+      revokePreview();
+      hideRequiredMsg();
+      activeSource = null;
+      resetUploadUi();
+      resetPasteUi();
+      if (fileInput) fileInput.value = "";
+      if (previewWrap) previewWrap.classList.add("hidden");
+      if (previewImg) previewImg.removeAttribute("src");
+    }
+
+    function displaySelectedFile(file, source) {
+      if (!file || !fileInput) return;
+
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      fileInput.files = dt.files;
+      activeSource = source;
+      hideRequiredMsg();
+
+      if (source === "upload") {
+        resetPasteUi();
+        if (uploadZone) uploadZone.classList.add("has-file");
+        if (uploadPrompt) uploadPrompt.textContent = UPLOAD_PROMPT_HAS_FILE;
+        setFieldStatus(uploadStatus, file.name, "success");
+      } else {
+        resetUploadUi();
+        if (pasteZone) pasteZone.classList.add("has-file");
+        if (pastePrompt) pastePrompt.textContent = PASTE_PROMPT_HAS_FILE;
+        setFieldStatus(pasteChosen, file.name, "success");
+        setFieldStatus(pasteStatus, "Screenshot ready from clipboard.", "success");
+      }
+
+      if (previewImg && previewWrap && file.type.startsWith("image/")) {
+        revokePreview();
+        previewUrl = URL.createObjectURL(file);
+        previewImg.src = previewUrl;
+        previewWrap.classList.remove("hidden");
+        previewWrap.setAttribute("aria-hidden", "false");
+      }
+    }
+
+    function fileFromClipboardData(dataTransfer) {
+      const items = dataTransfer && dataTransfer.items;
+      if (items) {
+        for (let i = 0; i < items.length; i += 1) {
+          const item = items[i];
+          if (item.kind === "file" && item.type.startsWith("image/")) {
+            const blob = item.getAsFile();
+            if (blob) {
+              const ext = (blob.type.split("/")[1] || "png").replace("jpeg", "jpg");
+              return new File([blob], "pasted-screenshot." + ext, { type: blob.type });
+            }
+          }
+        }
+      }
+      const files = dataTransfer && dataTransfer.files;
+      if (files) {
+        for (let j = 0; j < files.length; j += 1) {
+          if (files[j].type.startsWith("image/")) return files[j];
+        }
+      }
+      return null;
+    }
+
+    function isFormVisible() {
+      return form.offsetParent !== null;
+    }
+
+    function pasteFocusActive() {
+      const active = document.activeElement;
+      return pasteZone && active && (active === pasteZone || pasteZone.contains(active));
+    }
+
+    function handlePasteEvent(event) {
+      if (!isFormVisible() || !pasteFocusActive()) return;
+      const file = fileFromClipboardData(event.clipboardData);
+      if (!file) {
+        setFieldStatus(
+          pasteStatus,
+          "No image on clipboard — copy your screenshot first, then paste again.",
+          "error"
+        );
+        return;
+      }
+      event.preventDefault();
+      displaySelectedFile(file, "paste");
+    }
+
+    async function readClipboardImage() {
+      if (!navigator.clipboard || !navigator.clipboard.read) return null;
+      try {
+        const items = await navigator.clipboard.read();
+        for (const item of items) {
+          const type = item.types.find((t) => t.startsWith("image/"));
+          if (!type) continue;
+          const blob = await item.getType(type);
+          const ext = (type.split("/")[1] || "png").replace("jpeg", "jpg");
+          return new File([blob], "pasted-screenshot." + ext, { type });
+        }
+      } catch {
+        return null;
+      }
+      return null;
+    }
+
+    function handleUploadDrop(event) {
+      if (!isFormVisible()) return;
+      const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+      if (!file || !file.type.startsWith("image/")) return;
+      event.preventDefault();
+      displaySelectedFile(file, "upload");
+    }
+
+    if (fileInput) {
+      fileInput.addEventListener("change", function () {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) {
+          clearAll();
+          return;
+        }
+        displaySelectedFile(file, "upload");
+      });
+    }
+
+    if (pasteZone) {
+      pasteZone.addEventListener("paste", handlePasteEvent);
+      pasteZone.addEventListener("click", function () {
+        pasteZone.focus();
+      });
+    }
+
+    if (uploadZone) {
+      uploadZone.addEventListener("dragover", function (e) {
+        if (!isFormVisible()) return;
+        e.preventDefault();
+        uploadZone.classList.add("ocr-upload-zone-dragover");
+      });
+      uploadZone.addEventListener("dragleave", function (e) {
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+          uploadZone.classList.remove("ocr-upload-zone-dragover");
+        }
+      });
+      uploadZone.addEventListener("drop", function (e) {
+        uploadZone.classList.remove("ocr-upload-zone-dragover");
+        handleUploadDrop(e);
+      });
+    }
+
+    function startScanningLabel() {
+      if (!btn) return;
+      let step = 0;
+      btn.disabled = true;
+      btn.setAttribute("aria-busy", "true");
+      if (dotTimer) clearInterval(dotTimer);
+      const dotCounts = [2, 3, 4];
+      dotTimer = setInterval(function () {
+        btn.textContent = "Scanning" + ".".repeat(dotCounts[step % dotCounts.length]);
+        step += 1;
+      }, 750);
+      btn.textContent = "Scanning..";
+    }
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      hideRequiredMsg();
+      setFieldStatus(pasteStatus, "", "");
+
+      let hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+      if (!hasFile) {
+        const pasted = await readClipboardImage();
+        if (pasted) {
+          displaySelectedFile(pasted, "paste");
+          hasFile = true;
+        }
+      }
+
+      if (!hasFile) {
+        showRequiredMsg(
+          "Upload a screenshot, paste into the box above, or copy an image to your clipboard — then tap Scan."
+        );
+        if (pasteZone) pasteZone.focus();
+        return;
+      }
+
+      startScanningLabel();
+      form.submit();
+    });
+  }
+
   function initAll(evt) {
 
     setupSplitSliderDelegation();
@@ -1397,6 +1659,8 @@
     setupJoinDraftPreservation();
 
     syncFooterRevisionFromDom();
+
+    initOcrUploadForm(document);
 
     document.querySelectorAll("[data-parlay-form]").forEach(initParlayForm);
 

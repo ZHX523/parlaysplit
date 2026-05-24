@@ -4,7 +4,7 @@
 
 <div class="flex justify-center mb-6">
   <a href="{% url 'parlays:create' %}?method=screenshot&amp;discard_ocr=1"
-     class="btn-primary w-full max-w-xs text-center text-sm sm:text-base">
+     class="btn-primary w-full max-w-xs text-center text-sm sm:text-base touch-manipulation">
     Use a Different Screenshot
   </a>
 </div>
@@ -51,7 +51,7 @@
 
   {% include "parlays/partials/parlay_entry_fields.html" with form=form leg_type_choices=leg_type_choices max_legs=max_legs ocr_uncertain_fields=ocr_meta.uncertain_fields ocr_review=True %}
 
-  <button type="submit" class="btn-primary w-full">Create & Share Link</button>
+  <button type="submit" class="btn-primary w-full touch-manipulation">Create & Share Link</button>
 
 </form>
 

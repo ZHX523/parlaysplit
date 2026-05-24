@@ -1,18 +1,15 @@
 <h2 class="font-semibold text-sm text-slate-300 mb-1">Upload bet slip screenshot</h2>
-<p class="text-xs text-slate-500 mb-4">
-  FanDuel and DraftKings parlay screenshots work best (open slips, SGP, and multi-pick parlays). We extract legs and odds — you review before creating.
-  Refreshing this page clears any previous scan.
+<p class="hint-line mb-4">
+  FanDuel and DraftKings parlay screenshots work best. Upload a file, paste into the box below, or copy an image and tap Scan.
 </p>
 
 {% if ocr_upload and ocr_upload.status == "failed" %}
 <div class="rounded-lg border border-red-500/40 bg-red-950/30 p-3 text-sm text-red-300 mb-4">
-  Scan failed: {{ ocr_upload.error_message|default:"Could not read the image." }}
-  <div class="flex justify-center mt-3">
-    <a href="{% url 'parlays:create' %}?method=screenshot&amp;discard_ocr=1"
-       class="btn-secondary text-sm sm:text-base px-4 py-2 min-h-0">
-      Try a different screenshot
-    </a>
-  </div>
+  <p class="leading-relaxed break-anywhere">Scan failed: {{ ocr_upload.error_message|default:"Could not read the image." }}</p>
+  <a href="{% url 'parlays:create' %}?method=screenshot&amp;discard_ocr=1"
+     class="btn-secondary w-full text-center text-sm mt-3 touch-manipulation">
+    Try a different screenshot
+  </a>
 </div>
 {% endif %}
 
@@ -20,7 +17,7 @@
 <div class="rounded-lg border border-red-500/40 bg-red-950/30 p-3 text-sm text-red-300 space-y-1 mb-4">
   {% for field, errors in ocr_form.errors.items %}
     {% for err in errors %}
-    <p>{% if field != '__all__' %}{{ field }}: {% endif %}{{ err }}</p>
+    <p class="break-anywhere">{% if field != '__all__' %}{{ field }}: {% endif %}{{ err }}</p>
     {% endfor %}
   {% endfor %}
 </div>
@@ -29,55 +26,74 @@
 <form method="post"
       enctype="multipart/form-data"
       class="space-y-4"
-      id="ocr-upload-form">
+      id="ocr-upload-form"
+      data-ocr-upload-form>
   {% csrf_token %}
   <input type="hidden" name="action" value="upload_ocr">
   <input type="hidden" name="submission_method" value="screenshot">
 
-  <div>
-    <label class="label" for="{{ ocr_form.image.id_for_label }}">Screenshot (PNG or JPG)</label>
-    <input type="file"
-           name="image"
-           id="{{ ocr_form.image.id_for_label }}"
-           accept="image/png,image/jpeg,image/webp"
-           class="input-field file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-emerald-600 file:text-white file:text-sm">
+  <div class="ocr-upload-fields space-y-4">
+    {# Field 1: file upload from Photos / Files #}
+    <div class="ocr-upload-field">
+      <label class="label" for="{{ ocr_form.image.id_for_label }}" id="ocr-upload-label">Upload screenshot</label>
+
+      <label for="{{ ocr_form.image.id_for_label }}"
+             class="ocr-upload-zone"
+             id="ocr-upload-zone">
+        <input type="file"
+               name="image"
+               id="{{ ocr_form.image.id_for_label }}"
+               accept="image/png,image/jpeg,image/webp,image/*"
+               class="ocr-file-input"
+               aria-labelledby="ocr-upload-label ocr-upload-prompt">
+        <span class="ocr-zone-title" id="ocr-upload-prompt">Upload Screenshot</span>
+      </label>
+
+      <p class="ocr-field-status hidden"
+         id="ocr-upload-status"
+         aria-live="polite"></p>
+    </div>
+
+    <p class="ocr-fields-divider" aria-hidden="true">or</p>
+
+    {# Field 2: paste from clipboard #}
+    <div class="ocr-upload-field">
+      <span class="label" id="ocr-paste-label">Paste screenshot</span>
+
+      <div class="ocr-paste-zone"
+           id="ocr-paste-zone"
+           tabindex="0"
+           role="group"
+           aria-labelledby="ocr-paste-label ocr-paste-prompt">
+        <span class="ocr-zone-title" id="ocr-paste-prompt">Paste Screenshot</span>
+      </div>
+
+      <p class="ocr-field-status hidden"
+         id="ocr-paste-status"
+         role="status"
+         aria-live="polite"></p>
+
+      <p class="ocr-field-status hidden"
+         id="ocr-paste-chosen"
+         aria-live="polite"></p>
+    </div>
+
+    <div class="ocr-file-preview hidden" id="ocr-file-preview" aria-hidden="true">
+      <img alt="Screenshot preview" class="ocr-file-preview-img" id="ocr-file-preview-img" width="320" height="240" decoding="async">
+    </div>
+
+    <p class="text-red-400 text-sm hidden break-anywhere"
+       id="ocr-image-required"
+       role="alert"></p>
+
     {% if ocr_form.image.errors %}
-    <p class="text-red-400 text-sm mt-1">{{ ocr_form.image.errors.0 }}</p>
+    <p class="text-red-400 text-sm break-anywhere">{{ ocr_form.image.errors.0 }}</p>
     {% endif %}
   </div>
 
   <button type="submit"
-          class="btn-primary w-full"
+          class="btn-primary w-full touch-manipulation"
           id="ocr-scan-btn">
     Scan Betting Slip
   </button>
 </form>
-
-<script>
-(function () {
-  const form = document.getElementById("ocr-upload-form");
-  const btn = document.getElementById("ocr-scan-btn");
-  if (!form || !btn) return;
-
-  let dotTimer = null;
-
-  function startScanningLabel() {
-    let step = 0;
-    btn.disabled = true;
-    btn.setAttribute("aria-busy", "true");
-    if (dotTimer) clearInterval(dotTimer);
-    const dotCounts = [2, 3, 4];
-    dotTimer = setInterval(function () {
-      btn.textContent = "Scanning" + ".".repeat(dotCounts[step % dotCounts.length]);
-      step += 1;
-    }, 750);
-    btn.textContent = "Scanning..";
-  }
-
-  form.addEventListener("submit", function () {
-    if (!form.checkValidity()) return;
-    startScanningLabel();
-  });
-})();
-</script>
-
