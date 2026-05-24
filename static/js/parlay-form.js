@@ -1410,7 +1410,6 @@
     const UPLOAD_PROMPT_HAS_FILE = "Upload Screenshot";
     const PASTE_PROMPT_DEFAULT = "Paste Screenshot";
     const PASTE_PROMPT_HAS_FILE = "Paste Screenshot";
-    let dotTimer = null;
     let previewUrl = null;
     let activeSource = null;
 
@@ -1629,16 +1628,9 @@
 
     function startScanningLabel() {
       if (!btn) return;
-      let step = 0;
       btn.disabled = true;
       btn.setAttribute("aria-busy", "true");
-      if (dotTimer) clearInterval(dotTimer);
-      const dotCounts = [2, 3, 4];
-      dotTimer = setInterval(function () {
-        btn.textContent = "Scanning" + ".".repeat(dotCounts[step % dotCounts.length]);
-        step += 1;
-      }, 750);
-      btn.textContent = "Scanning..";
+      btn.classList.add("is-scanning");
     }
 
     form.addEventListener("submit", async function (event) {

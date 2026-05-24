@@ -503,6 +503,76 @@
   .ocr-leg-uncertain {
     @apply border-l-2 border-amber-500/60 pl-2;
   }
+  .ocr-scan-btn {
+    @apply relative min-h-[52px];
+  }
+  .ocr-scan-btn__label {
+    @apply inline-block;
+  }
+  .ocr-scan-btn__busy {
+    @apply hidden items-center justify-center gap-2;
+  }
+  .ocr-scan-btn.is-scanning .ocr-scan-btn__label {
+    @apply hidden;
+  }
+  .ocr-scan-btn.is-scanning .ocr-scan-btn__busy {
+    @apply inline-flex;
+  }
+  .ocr-scan-btn.is-scanning:disabled {
+    @apply opacity-100 cursor-wait;
+  }
+  .ocr-scan-btn__busy-text {
+    @apply text-sm font-semibold text-slate-950;
+  }
+  .ocr-flying-money {
+    @apply inline-flex shrink-0;
+  }
+  .ocr-flying-money__svg {
+    @apply block h-10 w-[4.5rem];
+  }
+  .ocr-flying-money__body {
+    transform-origin: 44px 28px;
+    animation: ocr-money-float 1.1s ease-in-out infinite;
+  }
+  .ocr-flying-money__wing--left {
+    transform-origin: 14px 22px;
+    animation: ocr-wing-flap-left 0.35s ease-in-out infinite alternate;
+  }
+  .ocr-flying-money__wing--right {
+    transform-origin: 74px 22px;
+    animation: ocr-wing-flap-right 0.35s ease-in-out infinite alternate;
+  }
+  .ocr-scan-status .ocr-flying-money__svg {
+    @apply h-9 w-16;
+  }
+}
+
+@keyframes ocr-money-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes ocr-wing-flap-left {
+  from {
+    transform: rotate(12deg);
+  }
+  to {
+    transform: rotate(-18deg);
+  }
+}
+
+@keyframes ocr-wing-flap-right {
+  from {
+    transform: rotate(-12deg);
+  }
+  to {
+    transform: rotate(18deg);
+  }
 }
 
 @layer utilities {

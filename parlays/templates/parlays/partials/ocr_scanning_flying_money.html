@@ -1,0 +1,22 @@
+{# Animated stack of bills with flapping wings — used while OCR is running #}
+<span class="ocr-flying-money" aria-hidden="true">
+  <svg class="ocr-flying-money__svg" viewBox="0 0 88 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g class="ocr-flying-money__body">
+      <g class="ocr-flying-money__wing ocr-flying-money__wing--left">
+        <path d="M6 30C2 24 0 16 6 10C10 6 16 12 14 22L12 32L6 30Z" fill="#f8fafc"/>
+        <path d="M10 28C8 22 8 16 12 12C14 10 16 14 15 20L14 28L10 28Z" fill="#e2e8f0"/>
+      </g>
+      <g class="ocr-flying-money__bills">
+        <rect x="24" y="22" width="40" height="24" rx="3" fill="#059669" transform="rotate(-6 44 34)"/>
+        <rect x="26" y="17" width="40" height="24" rx="3" fill="#10b981" transform="rotate(-2 46 29)"/>
+        <rect x="28" y="12" width="40" height="24" rx="3" fill="#34d399"/>
+        <rect x="30" y="14" width="36" height="20" rx="2" fill="#6ee7b7" opacity="0.35"/>
+        <text x="48" y="28" text-anchor="middle" fill="#022c22" font-size="11" font-weight="700" font-family="system-ui,sans-serif">$</text>
+      </g>
+      <g class="ocr-flying-money__wing ocr-flying-money__wing--right">
+        <path d="M82 30C86 24 88 16 82 10C78 6 72 12 74 22L76 32L82 30Z" fill="#f8fafc"/>
+        <path d="M78 28C80 22 80 16 76 12C74 10 72 14 73 20L74 28L78 28Z" fill="#e2e8f0"/>
+      </g>
+    </g>
+  </svg>
+</span>

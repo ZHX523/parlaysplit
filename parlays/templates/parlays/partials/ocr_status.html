@@ -1,6 +1,7 @@
 {% if ocr_upload.status == "pending" or ocr_upload.status == "processing" %}
-<div class="flex items-center gap-2 text-sm text-amber-300">
-  <span class="animate-pulse">●</span> Scanning slip…
+<div class="ocr-scan-status flex items-center justify-center gap-3 py-2 text-sm text-emerald-300">
+  {% include "parlays/partials/ocr_scanning_flying_money.html" %}
+  <span>Scanning Slip</span>
 </div>
 {% elif ocr_upload.status == "completed" %}
 <div class="text-sm text-emerald-400 space-y-2" id="ocr-status">
