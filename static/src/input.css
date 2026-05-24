@@ -462,7 +462,7 @@
     @apply cursor-pointer;
   }
   .ocr-paste-zone {
-    @apply cursor-text outline-none;
+    @apply cursor-pointer border-0 outline-none appearance-none font-inherit text-inherit;
   }
   .ocr-upload-zone:focus-within,
   .ocr-paste-zone:focus {

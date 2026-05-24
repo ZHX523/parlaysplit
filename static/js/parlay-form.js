@@ -1566,6 +1566,24 @@
       return null;
     }
 
+    async function tryPasteFromClipboard() {
+      if (!isFormVisible()) return;
+      setFieldStatus(pasteStatus, "Reading clipboard…", "");
+
+      const pasted = await readClipboardImage();
+      if (pasted) {
+        displaySelectedFile(pasted, "paste");
+        return;
+      }
+
+      setFieldStatus(
+        pasteStatus,
+        "No image found. Copy your screenshot first, tap here again, or long-press → Paste on your phone.",
+        "error"
+      );
+      if (pasteZone) pasteZone.focus();
+    }
+
     function handleUploadDrop(event) {
       if (!isFormVisible()) return;
       const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
@@ -1588,7 +1606,7 @@
     if (pasteZone) {
       pasteZone.addEventListener("paste", handlePasteEvent);
       pasteZone.addEventListener("click", function () {
-        pasteZone.focus();
+        tryPasteFromClipboard();
       });
     }
 
