@@ -49,18 +49,43 @@ def is_legacy_slug(slug: str) -> bool:
     return bool(_LEGACY_SLUG_RE.match(slug))
 
 
+def _parlay_title_slug(nickname: str) -> str:
+    """Slug for display title, e.g. Jordan's Parlay -> jordans-parlay."""
+    name = (nickname or "").strip()
+    if not name or name.upper() == DEFAULT_CREATOR_NICKNAME:
+        return "parlay"
+    if name.lower().endswith("s"):
+        title = f"{name}' parlay"
+    else:
+        title = f"{name}'s parlay"
+    slug = slugify(title) or slugify(name) or "parlay"
+    return slug[:40].strip("-")
+
+
+def _public_slug_suffix(length: int = 5) -> str:
+    """Random letters/numbers for URL uniqueness (default 5 chars)."""
+    alphabet = getattr(
+        settings,
+        "HOST_CODE_CHARSET",
+        "ABCDEFGHJKLMNPQRSTUVWXYZ23456789",
+    )
+    return "".join(secrets.choice(alphabet) for _ in range(length))
+
+
 def build_public_slug(parlay: Parlay) -> str:
     """
-  Human-readable path segment, e.g. jordan-parlay-3-legs-x7k2m9.
-  """
-    host = slugify(parlay.creator_nickname or "host") or "host"
-    host = host[:32].strip("-")
+    Human-readable path: {title}-{legcount}legs-{random5}.
+    Example: jordans-parlay-3legs-x7k2m
+    """
+    title = _parlay_title_slug(parlay.creator_nickname)
     leg_count = parlay.legs.count() if parlay.pk else 0
+    legs_part = f"{leg_count}legs"
     max_len = getattr(settings, "PARLAY_SLUG_MAX_LENGTH", 96)
+    suffix_len = getattr(settings, "PARLAY_SLUG_SUFFIX_LENGTH", 5)
 
     for _ in range(80):
-        suffix = secrets.token_hex(3)
-        candidate = f"{host}-parlay-{leg_count}-legs-{suffix}"
+        suffix = _public_slug_suffix(suffix_len)
+        candidate = f"{title}-{legs_part}-{suffix}"
         if len(candidate) > max_len:
             candidate = candidate[:max_len].rstrip("-")
         if not Parlay.objects.filter(slug=candidate).exclude(pk=parlay.pk).exists():
@@ -69,7 +94,7 @@ def build_public_slug(parlay: Parlay) -> str:
 
 
 def assign_public_slug(parlay: Parlay, *, only_if_legacy: bool = False) -> str:
-    """Set slug from host name, leg count, and a short random suffix."""
+    """Set slug from parlay title, leg count, and a 5-character random suffix."""
     if only_if_legacy and parlay.slug and not is_legacy_slug(parlay.slug):
         return parlay.slug
     new_slug = build_public_slug(parlay)

@@ -64,7 +64,7 @@ class Parlay(models.Model):
         max_length=96,
         unique=True,
         editable=False,
-        help_text="Public URL segment, e.g. jordan-parlay-3-legs-x7k2m9.",
+        help_text="Public URL segment, e.g. jordans-parlay-3legs-x7k2m.",
     )
     host_code = models.CharField(
         max_length=8,
