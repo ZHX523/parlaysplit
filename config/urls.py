@@ -5,11 +5,10 @@ from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
 from django.views.generic import TemplateView
 
-from parlays.sitemaps import PublicParlaySitemap, StaticViewSitemap
+from parlays.sitemaps import StaticViewSitemap
 
 sitemaps = {
     "static": StaticViewSitemap,
-    "parlays": PublicParlaySitemap,
 }
 
 urlpatterns = [

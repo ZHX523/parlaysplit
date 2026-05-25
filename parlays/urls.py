@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.generic import RedirectView
 
 
 
@@ -15,6 +16,11 @@ urlpatterns = [
     path("", views.landing, name="landing"),
 
     path("create/", views.create_parlay, name="create"),
+    path(
+        "find/",
+        RedirectView.as_view(pattern_name="parlays:host_lookup", permanent=True),
+        name="find",
+    ),
     path("my-parlay/", views.host_lookup, name="host_lookup"),
     path("host/<str:host_code>/", views.host_parlay, name="host"),
     path("p/<slug:slug>/og.png", views.parlay_og_image, name="og_image"),

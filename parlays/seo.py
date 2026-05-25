@@ -17,7 +17,7 @@ from meta.views import Meta
 
 from parlays.models import Parlay
 
-# Host and utility URLs should not compete with public parlay pages in search.
+# Temporary parlay pages (72h) and host dashboards should not be indexed.
 ROBOTS_NOINDEX = "noindex, nofollow"
 SITE_NAME = "ParlaySplit"
 
@@ -169,7 +169,6 @@ def build_parlay_page_meta(
             ("property", "og:image:alt", description),
         ],
     }
-    if is_host_view:
-        meta_kwargs["extra_props"] = {"robots": ROBOTS_NOINDEX}
+    meta_kwargs["extra_props"] = {"robots": ROBOTS_NOINDEX}
 
     return Meta(**meta_kwargs)

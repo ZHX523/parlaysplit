@@ -2,6 +2,7 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 Disallow: /media/
+Disallow: /p/
 Disallow: /host/
 Disallow: /ocr/
 Disallow: /p/*/creator/

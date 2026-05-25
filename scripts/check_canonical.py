@@ -38,7 +38,7 @@ if not parlay:
     sys.exit(1)
 
 expected_public = parlay_public_url(request, parlay)
-rows.append(audit(f"/p/{parlay.pk}/"))
+rows.append(audit(f"/p/{parlay.slug}/"))
 
 host_row = None
 if parlay.host_code:
@@ -55,11 +55,18 @@ for row in rows:
     print(f"\n{row['path']} ({row['status']})")
     print("  canonical:", row["canonical"] or "MISSING")
     print("  og:url:   ", row["og_url"] or "MISSING")
-    print("  robots:   ", row["robots"] or "(indexable)")
+    print("  robots:   ", row["robots"] or "MISSING")
     if not row["canonical"]:
         failed = True
     if row["canonical"] != row["og_url"]:
         print("  MISMATCH canonical vs og:url")
+        failed = True
+    if row["path"].startswith("/p/") or row["path"] == "/my-parlay/":
+        if not row["robots"] or "noindex" not in row["robots"]:
+            print("  parlay pages should be noindex")
+            failed = True
+    elif row["robots"]:
+        print("  static pages should not be noindex")
         failed = True
 
 if host_row:
@@ -80,6 +87,8 @@ if og.get("X-Robots-Tag") != "noindex":
     failed = True
 
 if "Disallow: /host/" not in robots_txt:
+    failed = True
+if "Disallow: /p/" not in robots_txt:
     failed = True
 
 if failed:

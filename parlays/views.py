@@ -727,7 +727,9 @@ def _render_parlay_page(request, parlay, *, is_host_view: bool):
 
     ctx["max_legs"] = settings.MAX_LEGS
 
-    return render(request, "parlays/detail.html", ctx)
+    response = render(request, "parlays/detail.html", ctx)
+    response["X-Robots-Tag"] = "noindex, nofollow"
+    return response
 
 
 

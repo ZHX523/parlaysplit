@@ -4,11 +4,6 @@ from django.conf import settings
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
 
-from django.utils import timezone
-
-from parlays.models import Parlay
-
-
 class SiteUrlMixin:
     """Build absolute sitemap URLs from SITE_URL in settings."""
 
@@ -38,21 +33,3 @@ class StaticViewSitemap(SiteUrlMixin, Sitemap):
 
     def location(self, item):
         return reverse(item)
-
-
-class PublicParlaySitemap(SiteUrlMixin, Sitemap):
-    changefreq = "daily"
-    priority = 0.6
-
-    def items(self):
-        now = timezone.now()
-        return (
-            Parlay.objects.filter(is_public=True, host_code_expires_at__gt=now)
-            .order_by("-updated_at")
-        )
-
-    def lastmod(self, obj):
-        return obj.updated_at
-
-    def location(self, obj):
-        return reverse("parlays:detail", kwargs={"slug": obj.slug})
