@@ -1400,13 +1400,12 @@
     const pasteZone = form.querySelector("#ocr-paste-zone");
     const uploadStatus = form.querySelector("#ocr-upload-status");
     const pasteStatus = form.querySelector("#ocr-paste-status");
-    const uploadPrompt = form.querySelector("#ocr-upload-prompt");
+    const uploadHint = form.querySelector("#ocr-upload-hint");
     const uploadPreview = form.querySelector("#ocr-upload-preview");
-    const pastePlaceholder = form.querySelector("#ocr-paste-placeholder");
+    const pasteHint = form.querySelector("#ocr-paste-hint");
     const pastePreview = form.querySelector("#ocr-paste-preview");
     const pasteChangeHint = form.querySelector("#ocr-paste-change");
     const requiredMsg = form.querySelector("#ocr-image-required");
-    const UPLOAD_PROMPT_DEFAULT = "Upload Screenshot";
     let previewUrl = null;
     let activeSource = null;
 
@@ -1453,17 +1452,14 @@
 
     function resetUploadUi() {
       hideZonePreview(uploadZone, uploadPreview);
-      if (uploadPrompt) {
-        uploadPrompt.textContent = UPLOAD_PROMPT_DEFAULT;
-        uploadPrompt.classList.remove("hidden");
-      }
+      if (uploadHint) uploadHint.classList.remove("hidden");
       setFieldStatus(uploadStatus, "", "");
     }
 
     function restorePasteZoneChildren() {
-      if (!pasteZone || !pastePlaceholder || !pastePreview) return;
+      if (!pasteZone || !pasteHint || !pastePreview) return;
       pasteZone.textContent = "";
-      pasteZone.appendChild(pastePlaceholder);
+      pasteZone.appendChild(pasteHint);
       pasteZone.appendChild(pastePreview);
     }
 
@@ -1473,7 +1469,7 @@
       if (pasteZone) {
         pasteZone.contentEditable = "true";
       }
-      if (pastePlaceholder) pastePlaceholder.classList.remove("hidden");
+      if (pasteHint) pasteHint.classList.remove("hidden");
       if (pasteChangeHint) pasteChangeHint.classList.add("hidden");
       setFieldStatus(pasteStatus, "", "");
     }
@@ -1508,14 +1504,14 @@
       if (source === "upload") {
         resetPasteUi();
         showZonePreview(uploadZone, uploadPreview, file);
-        if (uploadPrompt) uploadPrompt.classList.add("hidden");
+        if (uploadHint) uploadHint.classList.add("hidden");
         setFieldStatus(uploadStatus, "", "");
       } else {
         resetUploadUi();
         restorePasteZoneChildren();
         if (pasteZone) {
           pasteZone.classList.add("has-preview");
-          if (pastePlaceholder) pastePlaceholder.classList.add("hidden");
+          if (pasteHint) pasteHint.classList.add("hidden");
         }
         if (pasteChangeHint) pasteChangeHint.classList.remove("hidden");
         showZonePreview(pasteZone, pastePreview, file);

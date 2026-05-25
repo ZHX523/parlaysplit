@@ -45,8 +45,8 @@
                id="{{ ocr_form.image.id_for_label }}"
                accept="image/png,image/jpeg,image/webp,image/*"
                class="ocr-file-input"
-               aria-labelledby="ocr-upload-label ocr-upload-prompt">
-        <span class="ocr-zone-title" id="ocr-upload-prompt">Upload Screenshot</span>
+               aria-labelledby="ocr-upload-label ocr-upload-hint">
+        <span class="ocr-zone-hint" id="ocr-upload-hint">Upload Screenshot</span>
         <img class="ocr-zone-preview"
              id="ocr-upload-preview"
              alt="Uploaded screenshot preview"
@@ -73,7 +73,7 @@
            spellcheck="false"
            autocapitalize="off"
            autocorrect="off">
-        <span class="ocr-zone-title ocr-paste-placeholder" id="ocr-paste-placeholder">Paste Screenshot</span>
+        <span class="ocr-zone-hint" id="ocr-paste-hint">Paste Screenshot</span>
         <img class="ocr-zone-preview"
              id="ocr-paste-preview"
              alt="Pasted screenshot preview"

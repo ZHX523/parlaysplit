@@ -466,13 +466,14 @@
     -webkit-user-select: text;
     user-select: text;
   }
-  .ocr-paste-placeholder {
-    @apply text-slate-500 pointer-events-none;
+  .ocr-zone-hint {
+    @apply text-base font-semibold text-slate-500 pointer-events-none px-2;
   }
   .ocr-paste-zone.has-preview {
     @apply cursor-pointer;
   }
-  .ocr-paste-zone.has-preview .ocr-paste-placeholder {
+  .ocr-upload-zone.has-file .ocr-zone-hint,
+  .ocr-paste-zone.has-preview .ocr-zone-hint {
     @apply hidden;
   }
   .ocr-zone-preview {
@@ -484,10 +485,6 @@
   .ocr-upload-zone.has-file,
   .ocr-paste-zone.has-preview {
     @apply overflow-hidden py-2;
-  }
-  .ocr-upload-zone.has-file .ocr-zone-title,
-  .ocr-paste-zone.has-preview .ocr-paste-placeholder {
-    @apply hidden;
   }
   .ocr-upload-zone:focus-within,
   .ocr-paste-zone:focus {
