@@ -106,6 +106,14 @@ def landing(request):
 
 
 
+def about(request):
+    return render(
+        request,
+        "parlays/about.html",
+        {"meta": build_page_meta(request, "about")},
+    )
+
+
 def _clear_ocr_session(request) -> None:
     for key in ("last_ocr_upload_id", "pending_ocr_review_id", "ocr_review_token"):
         request.session.pop(key, None)

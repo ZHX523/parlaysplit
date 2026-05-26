@@ -27,6 +27,7 @@ class StaticViewSitemap(SiteUrlMixin, Sitemap):
     def items(self):
         return [
             "parlays:landing",
+            "parlays:about",
             "parlays:create",
             "parlays:host_lookup",
         ]

@@ -1,9 +1,10 @@
 import json
 
 from django.contrib import admin
+from django.utils import timezone
 from django.utils.html import format_html
 
-from .models import OCRScanFeedback, OCRUpload, Parlay, ParlayLeg, Participant
+from .models import OCRScanFeedback, OCRUpload, Parlay, ParlayLeg, ParlayStatus, Participant
 
 
 class ParlayLegInline(admin.TabularInline):
@@ -62,6 +63,18 @@ class ParlayAdmin(admin.ModelAdmin):
         ("Timestamps", {"fields": ("created_at", "updated_at")}),
     )
     inlines = [ParlayLegInline, ParticipantInline]
+
+    def changelist_view(self, request, extra_context=None):
+        now = timezone.now()
+        admin_stats = {
+            "total": Parlay.objects.count(),
+            "open": Parlay.objects.filter(status=ParlayStatus.OPEN).count(),
+            "locked": Parlay.objects.filter(status=ParlayStatus.LOCKED).count(),
+            "expired": Parlay.objects.filter(host_code_expires_at__lte=now).count(),
+        }
+        extra = extra_context or {}
+        extra["parlay_admin_stats"] = admin_stats
+        return super().changelist_view(request, extra_context=extra)
 
 
 class OCRScanFeedbackInline(admin.StackedInline):

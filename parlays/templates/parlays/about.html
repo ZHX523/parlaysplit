@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="space-y-10 py-2">
+  <header class="space-y-3">
+    <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">About ParlaySplit</h1>
+    <p class="text-slate-300 leading-relaxed">
+      ParlaySplit is a free social coordination tool built for sports bettors who share parlays with friends,
+      group chats, Discord servers, and online betting communities.
+    </p>
+    <p class="text-slate-400 leading-relaxed">
+      The idea came from a simple problem: people constantly tail the exact same sportsbook slips, but managing
+      participation manually becomes messy fast.
+    </p>
+    <p class="text-slate-400 leading-relaxed">
+      Tracking who is in, how much everyone contributed, estimated payout shares, and which parlay everyone is
+      following usually happens through scattered screenshots, Venmo messages, Discord chats, Reddit threads, and
+      Twitter replies. ParlaySplit was built to simplify that process.
+    </p>
+  </header>
+
+  <div class="h-px bg-slate-800/80"></div>
+  <section class="space-y-4">
+    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">What You Can Do</h2>
+    <ul class="list-disc pl-5 space-y-2 text-slate-300">
+      <li>Create shareable parlay pages</li>
+      <li>Upload sportsbook screenshots</li>
+      <li>Paste betting slip details</li>
+      <li>Track group participation</li>
+      <li>Estimate payout shares automatically</li>
+      <li>Organize parlays in one place</li>
+    </ul>
+    <p class="text-slate-400 leading-relaxed">
+      The platform is designed for bettors using sportsbooks like FanDuel, DraftKings, BetMGM, Caesars Sportsbook,
+      Kalshi, Polymarket, ESPN Bet, and basically any sportsbook.
+    </p>
+  </section>
+
+  <div class="h-px bg-slate-800/80"></div>
+  <section class="space-y-4">
+    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Why ParlaySplit Exists</h2>
+    <p class="text-slate-400 leading-relaxed">Sports betting has become increasingly social.</p>
+    <p class="text-slate-400">People share:</p>
+    <ul class="list-disc pl-5 space-y-2 text-slate-300">
+      <li>Same game parlays</li>
+      <li>Player props</li>
+      <li>Moneyline picks</li>
+      <li>MLB parlays</li>
+      <li>NBA parlays</li>
+      <li>NFL bets</li>
+    </ul>
+    <p class="text-slate-400 leading-relaxed">Across Reddit, Discord, Twitter/X, and group chats every day.</p>
+    <p class="text-slate-400 leading-relaxed">
+      But the tools around sportsbook sharing and group coordination are still fragmented.
+      ParlaySplit focuses on making sportsbook slip sharing easier, cleaner, and more organized.
+    </p>
+  </section>
+
+  <div class="h-px bg-slate-800/80"></div>
+  <section class="space-y-4">
+    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Built For Simplicity</h2>
+    <p class="text-slate-400 leading-relaxed">
+      The goal of ParlaySplit is not to replace sportsbooks or betting apps.
+    </p>
+    <p class="text-slate-400 leading-relaxed">
+      ParlaySplit does not accept wagers, process payments, or operate as a sportsbook.
+      Instead, it acts as a lightweight utility layer for organizing and sharing parlays socially.
+    </p>
+    <p class="text-slate-400">The platform is intentionally simple:</p>
+    <ul class="list-disc pl-5 space-y-2 text-slate-300">
+      <li>No subscription paywalls</li>
+      <li>No VIP pick packages</li>
+      <li>No gambling advice</li>
+      <li>No cluttered dashboards</li>
+    </ul>
+    <p class="text-slate-400 leading-relaxed">
+      Just a straightforward way to share and coordinate parlays online.
+    </p>
+  </section>
+
+  <div class="h-px bg-slate-800/80"></div>
+  <section class="space-y-4">
+    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">The Future of ParlaySplit</h2>
+    <p class="text-slate-400 leading-relaxed">
+      The platform is still early and evolving quickly based on community feedback.
+    </p>
+    <p class="text-slate-400">Future features may include:</p>
+    <ul class="list-disc pl-5 space-y-2 text-slate-300">
+      <li>Sportsbook slip importing</li>
+      <li>Discord integrations</li>
+      <li>Mobile notifications</li>
+      <li>Improved screenshot parsing</li>
+      <li>Trending public parlays</li>
+      <li>Live participation tracking</li>
+    </ul>
+    <p class="text-slate-400 leading-relaxed">
+      ParlaySplit is currently focused on improving the experience of sharing parlays with friends and online
+      betting communities.
+    </p>
+    <div class="pt-2">
+      <a href="{% url 'parlays:create' %}" class="btn-primary w-full sm:w-auto text-center">
+        Create a Parlay
+      </a>
+    </div>
+  </section>
+</section>
+{% endblock %}

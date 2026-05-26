@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
-  <link rel="stylesheet" href="{% static 'css/output.css' %}?v=44">
+  <link rel="stylesheet" href="{% static 'css/output.css' %}?v=47">
   {% if google_analytics_id %}
   <script async src="https://www.googletagmanager.com/gtag/js?id={{ google_analytics_id }}"></script>
   <script>
@@ -59,6 +59,9 @@
 
   <footer class="border-t border-slate-800 bg-slate-900/50 safe-bottom mt-auto">
     <div class="app-footer-inner space-y-4">
+      <p class="text-xs">
+        <a href="{% url 'parlays:about' %}" class="text-slate-300 hover:text-emerald-300 transition-colors">About</a>
+      </p>
       {% for disclaimer in legal_disclaimers %}
       <p class="text-xs text-slate-500">{{ disclaimer }}</p>
       {% endfor %}

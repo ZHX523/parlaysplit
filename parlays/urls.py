@@ -14,6 +14,7 @@ app_name = "parlays"
 urlpatterns = [
 
     path("", views.landing, name="landing"),
+    path("about/", views.about, name="about"),
 
     path("create/", views.create_parlay, name="create"),
     path(

@@ -53,6 +53,13 @@ PAGE_SEO: dict[str, PageSEO] = {
         ),
         view_name="parlays:landing",
     ),
+    "about": PageSEO(
+        title="About ParlaySplit",
+        description=(
+            "Learn why ParlaySplit exists and how it helps friends coordinate sportsbook parlays."
+        ),
+        view_name="parlays:about",
+    ),
     "create": PageSEO(
         title="Create a Group Parlay | ParlaySplit",
         description=(

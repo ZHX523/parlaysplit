@@ -10,6 +10,7 @@ client = Client(HTTP_HOST="localhost:8000")
 
 PATHS = [
     "/",
+    "/about/",
     "/create/",
     "/my-parlay/",
 ]
